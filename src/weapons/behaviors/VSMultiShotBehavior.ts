@@ -47,7 +47,12 @@ export class VSMultiShotBehavior implements IWeaponBehavior {
       projectiles.push({
         projectile,
         targetX,
-        targetY
+        targetY,
+        visuals: {
+          color: 0xFFFF00, // Yellow
+          shape: 'circle',
+          size: 4
+        }
       });
     }
     

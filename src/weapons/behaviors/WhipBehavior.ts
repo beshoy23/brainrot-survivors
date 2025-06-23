@@ -39,7 +39,14 @@ export class WhipBehavior implements IWeaponBehavior {
       projectiles.push({
         projectile,
         targetX,
-        targetY
+        targetY,
+        visuals: {
+          color: 0xFFFFFF, // White
+          shape: 'rectangle',
+          size: 6,
+          width: 30,
+          height: 6
+        }
       });
     }
     

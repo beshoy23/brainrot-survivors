@@ -32,10 +32,28 @@ export class AxeBehavior implements IWeaponBehavior {
     projectiles.push({
       projectile,
       targetX,
-      targetY
+      targetY,
+      visuals: {
+        color: 0x8B4513, // Brown
+        shape: 'rectangle',
+        size: 8,
+        width: 16,
+        height: 8,
+        rotating: true
+      }
     });
     
     return projectiles;
+  }
+  
+  getTargets(
+    position: Vector2, 
+    enemies: Enemy[],
+    range: number,
+    maxTargets: number
+  ): Enemy[] {
+    // Axe doesn't target specific enemies, it throws in a pattern
+    return [];
   }
   
   getDescription(): string {

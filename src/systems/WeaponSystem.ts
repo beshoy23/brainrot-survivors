@@ -126,13 +126,14 @@ export class WeaponSystem {
       );
       
       // Fire each projectile
-      projectileFires.forEach(({ projectile, targetX, targetY }) => {
+      projectileFires.forEach(({ projectile, targetX, targetY, visuals }) => {
         projectile.fire(
           playerPos.x,
           playerPos.y,
           targetX,
           targetY,
-          weapon.getDamage()
+          weapon.getDamage(),
+          visuals
         );
         
         this.activeProjectiles.add(projectile);

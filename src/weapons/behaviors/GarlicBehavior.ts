@@ -36,7 +36,13 @@ export class GarlicBehavior implements IWeaponBehavior {
       projectiles.push({
         projectile,
         targetX,
-        targetY
+        targetY,
+        visuals: {
+          color: 0x9B30FF, // Purple
+          shape: 'circle',
+          size: 12,
+          alpha: 0.6 // Transparent for aura effect
+        }
       });
     }
     

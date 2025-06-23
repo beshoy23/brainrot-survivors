@@ -43,7 +43,12 @@ export class SpreadShotBehavior implements IWeaponBehavior {
       projectiles.push({
         projectile,
         targetX,
-        targetY
+        targetY,
+        visuals: {
+          color: 0xFFA500, // Orange
+          shape: 'circle',
+          size: 3 // Smaller bullets
+        }
       });
     }
     

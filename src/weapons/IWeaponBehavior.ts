@@ -1,12 +1,13 @@
 import { Vector2 } from '../utils/Vector2';
 import { Enemy } from '../entities/Enemy';
-import { Projectile } from '../entities/Projectile';
+import { Projectile, ProjectileVisuals } from '../entities/Projectile';
 import { PoolManager } from '../managers/PoolManager';
 
 export interface ProjectileFire {
   projectile: Projectile;
   targetX: number;
   targetY: number;
+  visuals?: ProjectileVisuals;
 }
 
 export interface IWeaponBehavior {
