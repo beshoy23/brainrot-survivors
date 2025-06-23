@@ -55,8 +55,8 @@ export class WeaponFactory {
         return new Weapon({
           damage: baseConfig.damage * 0.5, // Low damage but constant
           fireRate: 2, // Ticks twice per second
-          projectileSpeed: 0, // No projectiles
-          range: 100,
+          projectileSpeed: 50, // Very slow moving for stationary effect
+          range: 20, // Short range for area effect
           behavior: new GarlicBehavior()
         });
         
@@ -64,7 +64,7 @@ export class WeaponFactory {
         return new Weapon({
           damage: baseConfig.damage * 1.5, // Medium-high damage
           fireRate: 1.5, // Medium fire rate
-          projectileSpeed: 0, // Instant hit
+          projectileSpeed: 800, // Very fast for "instant" feel
           range: 150,
           behavior: new WhipBehavior()
         });

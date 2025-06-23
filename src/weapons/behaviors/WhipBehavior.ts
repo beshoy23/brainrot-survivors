@@ -4,13 +4,13 @@ import { Enemy } from '../../entities/Enemy';
 import { Projectile } from '../../entities/Projectile';
 import { PoolManager } from '../../managers/PoolManager';
 
-// VS-style Whip - horizontal strike
+// VS-style Whip - creates wide horizontal projectile
 export class WhipBehavior implements IWeaponBehavior {
   private lastDirection: number = 1; // 1 for right, -1 for left
   
   constructor(
     private whipLength: number = 150,
-    private whipWidth: number = 30
+    private projectileCount: number = 3 // Multiple projectiles for width
   ) {}
   
   fire(
@@ -23,45 +23,52 @@ export class WhipBehavior implements IWeaponBehavior {
     // Alternate whip direction
     this.lastDirection *= -1;
     
-    // Find all enemies in whip area
-    const hitEnemies: Enemy[] = [];
+    const projectiles: ProjectileFire[] = [];
     
-    for (const enemy of enemies) {
-      if (!enemy.sprite.active) continue;
-      
-      const relativeX = enemy.x - position.x;
-      const relativeY = enemy.y - position.y;
-      
-      // Check if enemy is on the correct side
-      if ((this.lastDirection > 0 && relativeX > 0) || 
-          (this.lastDirection < 0 && relativeX < 0)) {
-        
-        // Check if within whip range
-        if (Math.abs(relativeX) <= this.whipLength && 
-            Math.abs(relativeY) <= this.whipWidth) {
-          hitEnemies.push(enemy);
-        }
-      }
-    }
-    
-    // Damage all enemies in whip area instantly
-    hitEnemies.forEach(enemy => {
-      enemy.takeDamage(damage);
-    });
-    
-    // Create visual effect projectile (doesn't actually move)
-    if (hitEnemies.length > 0) {
+    // Create multiple projectiles to form whip shape
+    for (let i = 0; i < this.projectileCount; i++) {
       const projectile = projectilePool.acquire();
-      const targetX = position.x + (this.lastDirection * this.whipLength);
       
-      return [{
+      // Spread projectiles vertically to create whip width
+      const verticalOffset = (i - (this.projectileCount - 1) / 2) * 20;
+      
+      // Target position is horizontal from player
+      const targetX = position.x + (this.lastDirection * this.whipLength);
+      const targetY = position.y + verticalOffset;
+      
+      projectiles.push({
         projectile,
         targetX,
-        targetY: position.y
-      }];
+        targetY
+      });
     }
     
-    return [];
+    return projectiles;
+  }
+  
+  getTargets(
+    position: Vector2, 
+    enemies: Enemy[],
+    range: number,
+    maxTargets: number
+  ): Enemy[] {
+    // Find enemies in whip direction
+    return enemies
+      .filter(enemy => {
+        if (!enemy.sprite.active) return false;
+        
+        const relativeX = enemy.x - position.x;
+        const relativeY = enemy.y - position.y;
+        
+        // Check if enemy is on the correct side and within range
+        const onCorrectSide = (this.lastDirection > 0 && relativeX > 0) || 
+                             (this.lastDirection < 0 && relativeX < 0);
+        const withinRange = Math.abs(relativeX) <= this.whipLength && 
+                           Math.abs(relativeY) <= 40; // Whip height
+        
+        return onCorrectSide && withinRange;
+      })
+      .slice(0, maxTargets);
   }
   
   getDescription(): string {
