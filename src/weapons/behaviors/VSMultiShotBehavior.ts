@@ -92,4 +92,23 @@ export class VSMultiShotBehavior implements IWeaponBehavior {
   setAdditionalShots(count: number): void {
     this.additionalShots = count;
   }
+  
+  getTargets(
+    position: Vector2, 
+    enemies: Enemy[],
+    range: number,
+    maxTargets: number
+  ): Enemy[] {
+    // Find nearest enemies within range
+    return enemies
+      .filter(enemy => enemy.sprite.active)
+      .map(enemy => ({
+        enemy,
+        distance: position.distanceTo(new Vector2(enemy.x, enemy.y))
+      }))
+      .filter(({ distance }) => distance <= range)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, maxTargets)
+      .map(({ enemy }) => enemy);
+  }
 }
