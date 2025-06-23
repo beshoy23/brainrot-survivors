@@ -9,66 +9,81 @@ export interface WaveConfig {
 
 // VS-style wave progression - TRUE VS DENSITY!
 export const WAVE_CONFIG: WaveConfig[] = [
-  // Minute 0-1: Learning phase
+  // Minute 0-1: Gentle learning phase (like real VS)
   {
     minute: 0,
-    minEnemies: 20,
-    spawnInterval: 800,
+    minEnemies: 15, // Start very small like VS
+    spawnInterval: 1200,
     types: ['basic']
   },
   
-  // Minute 1-2: Introduction of speed
+  // Minute 1-2: Gradual introduction 
   {
     minute: 1,
-    minEnemies: 30,
-    spawnInterval: 600,
+    minEnemies: 40,
+    spawnInterval: 800,
     types: ['basic', 'fast'],
-    bossSpawn: true // First boss at 1:00
+    bossSpawn: true
   },
   
   // Minute 2-3: Swarm introduction
   {
     minute: 2,
-    minEnemies: 40,
-    spawnInterval: 500,
+    minEnemies: 120,
+    spawnInterval: 400,
     types: ['basic', 'fast', 'swarm']
   },
   
   // Minute 3-4: Pressure increase
   {
     minute: 3,
-    minEnemies: 60,
-    spawnInterval: 400,
+    minEnemies: 180,
+    spawnInterval: 300,
     types: ['basic', 'fast', 'swarm']
   },
   
   // Minute 4-5: Tank introduction
   {
     minute: 4,
-    minEnemies: 80,
-    spawnInterval: 350,
+    minEnemies: 250,
+    spawnInterval: 250,
     types: ['basic', 'fast', 'swarm', 'tank']
   },
   
   // Minute 5-6: Major challenge
   {
     minute: 5,
-    minEnemies: 100,
-    spawnInterval: 300,
+    minEnemies: 350,
+    spawnInterval: 200,
     types: ['basic', 'fast', 'swarm', 'tank'],
     bossSpawn: true,
     specialEvent: 'elite_wave'
   },
   
-  // Continue pattern...
+  // Minute 6-7: High intensity
   {
     minute: 6,
-    minEnemies: 120,
-    spawnInterval: 250,
+    minEnemies: 450,
+    spawnInterval: 150,
     types: ['basic', 'fast', 'swarm', 'tank']
   },
   
-  // Add more waves as needed
+  // Minute 7-8: Extreme density
+  {
+    minute: 7,
+    minEnemies: 550,
+    spawnInterval: 120,
+    types: ['basic', 'fast', 'swarm', 'tank']
+  },
+  
+  // Minute 8+: VS peak intensity
+  {
+    minute: 8,
+    minEnemies: 650,
+    spawnInterval: 100,
+    types: ['basic', 'fast', 'swarm', 'tank'],
+    bossSpawn: true
+  }
 ];
 
 // Helper to get current wave config
@@ -84,15 +99,15 @@ export function getWaveConfig(survivalTimeMinutes: number): WaveConfig {
     }
   }
   
-  // For waves beyond configured, scale the last wave
+  // For waves beyond configured, scale the last wave aggressively
   if (survivalTimeMinutes >= WAVE_CONFIG.length) {
     const lastWave = WAVE_CONFIG[WAVE_CONFIG.length - 1];
     const extraMinutes = survivalTimeMinutes - lastWave.minute;
     
     return {
       ...lastWave,
-      minEnemies: lastWave.minEnemies + (extraMinutes * 5),
-      spawnInterval: Math.max(300, lastWave.spawnInterval - (extraMinutes * 20))
+      minEnemies: lastWave.minEnemies + (extraMinutes * 50), // Much more aggressive scaling
+      spawnInterval: Math.max(80, lastWave.spawnInterval - (extraMinutes * 10)) // Faster spawning
     };
   }
   

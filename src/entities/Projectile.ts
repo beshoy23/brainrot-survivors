@@ -11,6 +11,15 @@ export interface ProjectileVisuals {
   rotating?: boolean; // For spinning projectiles
 }
 
+export interface FollowTarget {
+  x: number;
+  y: number;
+}
+
+export interface LiveTarget {
+  getPosition(): { x: number; y: number };
+}
+
 export class Projectile {
   public sprite: GameObjects.Graphics;
   public velocity: Vector2 = new Vector2();
@@ -21,6 +30,9 @@ export class Projectile {
   public id: string;
   private rotating: boolean = false;
   private rotationSpeed: number = 360; // degrees per second
+  private followTarget?: FollowTarget;
+  private liveTarget?: LiveTarget;
+  private followOffset: Vector2 = new Vector2();
   
   constructor(private scene: Scene) {
     this.sprite = scene.add.graphics();
@@ -29,7 +41,7 @@ export class Projectile {
     this.id = Math.random().toString(36);
   }
 
-  fire(x: number, y: number, targetX: number, targetY: number, damage: number = 10, visuals?: ProjectileVisuals): void {
+  fire(x: number, y: number, targetX: number, targetY: number, damage: number = 10, visuals?: ProjectileVisuals, speed?: number, followTarget?: FollowTarget, liveTarget?: LiveTarget): void {
     this.sprite.setPosition(x, y);
     this.sprite.setVisible(true);
     this.sprite.setActive(true);
@@ -45,6 +57,24 @@ export class Projectile {
       this.sprite.fillCircle(0, 0, 4);
     }
     
+    // Use provided speed or default
+    this.speed = speed !== undefined ? speed : 500;
+    
+    // Set up follow target if provided
+    this.followTarget = followTarget;
+    this.liveTarget = liveTarget;
+    
+    if (liveTarget) {
+      // Calculate offset from live target's current position
+      const currentPos = liveTarget.getPosition();
+      this.followOffset.x = x - currentPos.x;
+      this.followOffset.y = y - currentPos.y;
+    } else if (followTarget) {
+      // Calculate offset from static target
+      this.followOffset.x = x - followTarget.x;
+      this.followOffset.y = y - followTarget.y;
+    }
+    
     // Calculate direction
     const dx = targetX - x;
     const dy = targetY - y;
@@ -53,6 +83,13 @@ export class Projectile {
     if (distance > 0) {
       this.velocity.x = (dx / distance) * this.speed;
       this.velocity.y = (dy / distance) * this.speed;
+      this.lifespan = 2000; // Normal lifespan for moving projectiles
+    } else {
+      // Stationary projectile (for Garlic)
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+      // Shorter lifespan for stationary projectiles
+      this.lifespan = 400; // 0.4 seconds
     }
     
     this.damage = damage;
@@ -92,8 +129,20 @@ export class Projectile {
     if (!this.sprite.active) return false;
     
     // Update position
-    this.sprite.x += this.velocity.x * deltaTime / 1000;
-    this.sprite.y += this.velocity.y * deltaTime / 1000;
+    if (this.liveTarget) {
+      // Follow live target maintaining offset
+      const currentPos = this.liveTarget.getPosition();
+      this.sprite.x = currentPos.x + this.followOffset.x;
+      this.sprite.y = currentPos.y + this.followOffset.y;
+    } else if (this.followTarget) {
+      // Follow static target maintaining offset
+      this.sprite.x = this.followTarget.x + this.followOffset.x;
+      this.sprite.y = this.followTarget.y + this.followOffset.y;
+    } else {
+      // Normal projectile movement
+      this.sprite.x += this.velocity.x * deltaTime / 1000;
+      this.sprite.y += this.velocity.y * deltaTime / 1000;
+    }
     
     // Update rotation if needed
     if (this.rotating) {
@@ -113,6 +162,9 @@ export class Projectile {
     this.sprite.setPosition(-100, -100);
     this.velocity.set(0, 0);
     this.age = 0;
+    this.followTarget = undefined;
+    this.liveTarget = undefined;
+    this.followOffset.set(0, 0);
   }
 
   get x(): number { return this.sprite.x; }

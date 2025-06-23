@@ -1,6 +1,7 @@
 import { IWeaponBehavior, ProjectileFire } from '../IWeaponBehavior';
 import { Vector2 } from '../../utils/Vector2';
 import { Enemy } from '../../entities/Enemy';
+import { Player } from '../../entities/Player';
 import { Projectile } from '../../entities/Projectile';
 import { PoolManager } from '../../managers/PoolManager';
 
@@ -16,11 +17,12 @@ export class GarlicBehavior implements IWeaponBehavior {
     enemies: Enemy[], 
     projectilePool: PoolManager<Projectile>,
     damage: number,
-    range: number
+    range: number,
+    player?: Player
   ): ProjectileFire[] {
     const projectiles: ProjectileFire[] = [];
     
-    // Create circular pattern of stationary projectiles
+    // Create circular pattern of projectiles that follow player
     for (let i = 0; i < this.projectileCount; i++) {
       const angle = (Math.PI * 2 * i) / this.projectileCount;
       const projectile = projectilePool.acquire();
@@ -29,14 +31,18 @@ export class GarlicBehavior implements IWeaponBehavior {
       const offsetX = Math.cos(angle) * (this.radius * 0.7);
       const offsetY = Math.sin(angle) * (this.radius * 0.7);
       
-      // Target is same as position (stationary)
-      const targetX = position.x + offsetX;
-      const targetY = position.y + offsetY;
+      // Projectiles spawn AT circle position and follow player
+      const spawnX = position.x + offsetX;
+      const spawnY = position.y + offsetY;
       
       projectiles.push({
         projectile,
-        targetX,
-        targetY,
+        startX: spawnX,
+        startY: spawnY,
+        targetX: spawnX, // Same as start (stationary)
+        targetY: spawnY,
+        speed: 0, // No movement
+        liveTarget: player, // Follow the player object directly
         visuals: {
           color: 0x9B30FF, // Purple
           shape: 'circle',

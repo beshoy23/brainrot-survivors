@@ -4,10 +4,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.BASIC]: {
     id: EnemyTypeId.BASIC,
     name: 'Basic Enemy',
-    health: 5, // Reduced for higher density
-    speed: 150,
-    damage: 5, // Reduced damage
-    size: 20, // Smaller for performance
+    health: 3, // Further reduced for high density
+    speed: 120, // Slower for dodgeability
+    damage: 2, // Much lower damage
+    size: 18, // Smaller
     color: 0xff0000, // Red
     shape: 'square',
     spawnWeight: 10,
@@ -17,10 +17,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.FAST]: {
     id: EnemyTypeId.FAST,
     name: 'Fast Ghost',
-    health: 3, // Very fragile
-    speed: 280,
-    damage: 3,
-    size: 16, // Smaller
+    health: 2, // Very fragile for high numbers
+    speed: 220, // Reduced from 280
+    damage: 1, // Minimal damage
+    size: 14, // Smaller
     color: 0xff00ff, // Magenta
     shape: 'diamond',
     spawnWeight: 6,
@@ -30,10 +30,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.TANK]: {
     id: EnemyTypeId.TANK,
     name: 'Heavy Tank',
-    health: 30, // Reduced from 50
-    speed: 80,
-    damage: 10, // Reduced from 20
-    size: 32,
+    health: 20, // Reduced for faster kills
+    speed: 60, // Slower
+    damage: 5, // Much reduced
+    size: 28, // Smaller
     color: 0x800000, // Dark red
     shape: 'square',
     spawnWeight: 3,
@@ -43,10 +43,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.SWARM]: {
     id: EnemyTypeId.SWARM,
     name: 'Swarm Bug',
-    health: 2, // Very weak individually
-    speed: 170,
-    damage: 2,
-    size: 12, // Tiny
+    health: 1, // One-shot kills for high density
+    speed: 140, // Reduced speed
+    damage: 1, // Minimal damage
+    size: 10, // Very tiny
     color: 0xffaa00, // Orange
     shape: 'circle',
     spawnWeight: 8,
@@ -57,10 +57,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.ELITE]: {
     id: EnemyTypeId.ELITE,
     name: 'Elite Boss',
-    health: 100, // Reduced from 200
-    speed: 120,
-    damage: 15, // Reduced from 30
-    size: 48,
+    health: 60, // Reduced for faster boss fights
+    speed: 100, // Slower
+    damage: 8, // Much reduced
+    size: 40, // Smaller
     color: 0x4b0082, // Indigo
     shape: 'diamond',
     spawnWeight: 0, // Special spawn logic

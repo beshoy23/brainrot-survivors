@@ -1,13 +1,19 @@
 import { Vector2 } from '../utils/Vector2';
 import { Enemy } from '../entities/Enemy';
-import { Projectile, ProjectileVisuals } from '../entities/Projectile';
+import { Player } from '../entities/Player';
+import { Projectile, ProjectileVisuals, FollowTarget, LiveTarget } from '../entities/Projectile';
 import { PoolManager } from '../managers/PoolManager';
 
 export interface ProjectileFire {
   projectile: Projectile;
+  startX?: number; // Optional start position (defaults to player)
+  startY?: number;
   targetX: number;
   targetY: number;
+  speed?: number; // Optional speed override
   visuals?: ProjectileVisuals;
+  followTarget?: FollowTarget; // For aura weapons that follow static position
+  liveTarget?: LiveTarget; // For aura weapons that follow live object
 }
 
 export interface IWeaponBehavior {
@@ -17,7 +23,8 @@ export interface IWeaponBehavior {
     enemies: Enemy[], 
     projectilePool: PoolManager<Projectile>,
     damage: number,
-    range: number
+    range: number,
+    player?: Player
   ): ProjectileFire[];
   
   // Get valid targets for this weapon

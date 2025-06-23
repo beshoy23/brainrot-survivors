@@ -92,7 +92,7 @@ export class Enemy {
     }
   }
 
-  update(deltaTime: number, playerPos: Vector2, allEnemies?: Enemy[]): void {
+  update(deltaTime: number, playerPos: Vector2): void {
     if (!this.sprite.active) return;
     
     // Calculate direction to player
@@ -103,70 +103,25 @@ export class Enemy {
     // Stop at collision distance to prevent overlap with player
     const stopDistance = GameConfig.player.hitboxRadius + this.hitboxRadius - 2; // -2 to ensure collision
     
-    // Calculate movement toward player
-    let moveX = 0;
-    let moveY = 0;
-    
+    // VS-style: Direct movement toward player, no enemy collision
     if (distance > stopDistance) {
       // Normalize and apply speed toward player
-      moveX = (dx / distance) * this.speed;
-      moveY = (dy / distance) * this.speed;
-    }
-    
-    // Apply enemy-to-enemy separation force
-    if (allEnemies) {
-      const separationForce = this.calculateSeparationForce(allEnemies);
-      moveX += separationForce.x;
-      moveY += separationForce.y;
-    }
-    
-    // Prevent movement that would push enemy into player
-    const newX = this.sprite.x + (moveX * deltaTime / 1000);
-    const newY = this.sprite.y + (moveY * deltaTime / 1000);
-    const newDx = playerPos.x - newX;
-    const newDy = playerPos.y - newY;
-    const newDistance = Math.sqrt(newDx * newDx + newDy * newDy);
-    
-    // Only move if it doesn't bring enemy too close to player
-    if (newDistance >= stopDistance) {
-      this.velocity.x = moveX;
-      this.velocity.y = moveY;
+      const moveX = (dx / distance) * this.speed * deltaTime / 1000;
+      const moveY = (dy / distance) * this.speed * deltaTime / 1000;
       
-      // Update position
-      this.sprite.x = newX;
-      this.sprite.y = newY;
+      this.velocity.x = moveX * 1000 / deltaTime; // Store velocity for reference
+      this.velocity.y = moveY * 1000 / deltaTime;
+      
+      // Update position directly - enemies can overlap each other like VS
+      this.sprite.x += moveX;
+      this.sprite.y += moveY;
     } else {
-      // Stop completely if trying to get too close
+      // Stop at player collision boundary
       this.velocity.x = 0;
       this.velocity.y = 0;
     }
   }
 
-  private calculateSeparationForce(allEnemies: Enemy[]): Vector2 {
-    const separationForce = new Vector2();
-    const separationRadius = this.hitboxRadius * 3; // Increased radius
-    const separationStrength = this.speed * 1.2; // Stronger separation
-    
-    for (const other of allEnemies) {
-      if (other === this || !other.sprite.active) continue;
-      
-      const dx = this.sprite.x - other.sprite.x;
-      const dy = this.sprite.y - other.sprite.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance < separationRadius && distance > 0) {
-        // Calculate separation force (stronger when closer)
-        const force = separationStrength * (1 - distance / separationRadius);
-        const normalizedX = dx / distance;
-        const normalizedY = dy / distance;
-        
-        separationForce.x += normalizedX * force;
-        separationForce.y += normalizedY * force;
-      }
-    }
-    
-    return separationForce;
-  }
 
   takeDamage(amount: number): boolean {
     this.health -= amount;

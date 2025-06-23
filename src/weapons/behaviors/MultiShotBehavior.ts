@@ -1,6 +1,7 @@
 import { IWeaponBehavior, ProjectileFire } from '../IWeaponBehavior';
 import { Vector2 } from '../../utils/Vector2';
 import { Enemy } from '../../entities/Enemy';
+import { Player } from '../../entities/Player';
 import { Projectile } from '../../entities/Projectile';
 import { PoolManager } from '../../managers/PoolManager';
 
@@ -12,7 +13,8 @@ export class MultiShotBehavior implements IWeaponBehavior {
     enemies: Enemy[], 
     projectilePool: PoolManager<Projectile>,
     damage: number,
-    range: number
+    range: number,
+    player?: Player
   ): ProjectileFire[] {
     const shotCount = 1 + this.additionalShots;
     const targets = this.getTargets(position, enemies, range, shotCount);

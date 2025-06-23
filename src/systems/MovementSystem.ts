@@ -6,12 +6,13 @@ export class MovementSystem {
     // Update player
     player.update(deltaTime);
     
-    // Update all active enemies
+    // Update all active enemies - VS style with no enemy collision
     const playerPos = player.getPosition();
     const activeEnemies = enemies.filter(e => e.sprite.active);
     
+    // O(n) performance - each enemy only calculates toward player
     activeEnemies.forEach(enemy => {
-      enemy.update(deltaTime, playerPos, activeEnemies);
+      enemy.update(deltaTime, playerPos);
     });
   }
 }

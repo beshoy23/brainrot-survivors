@@ -23,7 +23,7 @@ export class SpawnSystem {
     this.enemyPool = new PoolManager(
       () => new Enemy(scene),
       (enemy) => enemy.reset(),
-      300 // Increased for wave system
+      800 // Increased for VS-level density
     );
     
     // Initialize with first wave
@@ -42,11 +42,11 @@ export class SpawnSystem {
     
     // VS-style spawn logic
     if (activeEnemies < this.currentWave.minEnemies) {
-      // RAPID SPAWN MODE - fill quota quickly
+      // RAPID SPAWN MODE - fill quota quickly with bursts
       this.rapidSpawnMode = true;
       if (currentTime - this.lastRapidSpawn >= this.rapidSpawnInterval) {
         this.lastRapidSpawn = currentTime;
-        this.spawnEnemy(playerPos);
+        this.spawnBurst(playerPos);
       }
     } else {
       // NORMAL SPAWN MODE - respects wave interval
@@ -72,13 +72,24 @@ export class SpawnSystem {
     });
   }
 
-  private spawnEnemy(playerPos: Vector2): void {
-    // Single enemy spawn for rapid mode
+  private spawnBurst(playerPos: Vector2): void {
+    // VS-style burst spawning to fill quota quickly
+    const activeEnemies = this.getActiveEnemies().length;
+    const deficit = this.currentWave.minEnemies - activeEnemies;
+    
+    if (deficit <= 0) return;
+    
+    // Spawn burst of enemies - scale with deficit size and time
+    const timeMinutes = this.survivalTime / 60000;
+    const burstPercent = timeMinutes < 1 ? 0.08 : 0.15; // Gentler in first minute
+    const burstSize = Math.min(deficit, Math.max(1, Math.ceil(deficit * burstPercent)));
     const availableTypes = this.getAvailableTypesForWave();
     if (availableTypes.length === 0) return;
     
-    const enemyType = getRandomEnemyType(availableTypes);
-    this.spawnSingleEnemy(playerPos, enemyType);
+    for (let i = 0; i < burstSize; i++) {
+      const enemyType = getRandomEnemyType(availableTypes);
+      this.spawnSingleEnemy(playerPos, enemyType);
+    }
   }
   
   private spawnWaveEnemies(playerPos: Vector2): void {
@@ -98,7 +109,9 @@ export class SpawnSystem {
   }
   
   private getAvailableTypesForWave(): any[] {
-    // Get enemy types based on current wave config
+    const currentTimeSeconds = this.survivalTime / 1000;
+    
+    // Get enemy types based on current wave config AND time gates
     return this.currentWave.types
       .map(typeName => {
         // Map wave type names to actual enemy configs
@@ -107,10 +120,16 @@ export class SpawnSystem {
           case 'fast': return ENEMY_TYPES.fast;
           case 'swarm': return ENEMY_TYPES.swarm;
           case 'tank': return ENEMY_TYPES.tank;
+          case 'elite': return ENEMY_TYPES.elite;
           default: return null;
         }
       })
-      .filter(type => type !== null);
+      .filter(type => {
+        // Filter by time gates and spawn weight
+        return type !== null && 
+               type.minWaveTime <= currentTimeSeconds && 
+               type.spawnWeight > 0;
+      });
   }
   
   private spawnSingleEnemy(playerPos: Vector2, enemyType: any): void {

@@ -122,18 +122,22 @@ export class WeaponSystem {
         enemies,
         this.projectilePool,
         weapon.getDamage(),
-        weapon.range
+        weapon.range,
+        player
       );
       
       // Fire each projectile
-      projectileFires.forEach(({ projectile, targetX, targetY, visuals }) => {
+      projectileFires.forEach(({ projectile, startX, startY, targetX, targetY, speed, visuals, followTarget, liveTarget }) => {
         projectile.fire(
-          playerPos.x,
-          playerPos.y,
+          startX ?? playerPos.x, // Use custom start or player position
+          startY ?? playerPos.y,
           targetX,
           targetY,
           weapon.getDamage(),
-          visuals
+          visuals,
+          speed ?? weapon.projectileSpeed, // Use custom speed or weapon's speed
+          followTarget,
+          liveTarget
         );
         
         this.activeProjectiles.add(projectile);

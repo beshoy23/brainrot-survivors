@@ -1,6 +1,7 @@
 import { IWeaponBehavior, ProjectileFire } from '../IWeaponBehavior';
 import { Vector2 } from '../../utils/Vector2';
 import { Enemy } from '../../entities/Enemy';
+import { Player } from '../../entities/Player';
 import { Projectile } from '../../entities/Projectile';
 import { PoolManager } from '../../managers/PoolManager';
 
@@ -18,7 +19,8 @@ export class WhipBehavior implements IWeaponBehavior {
     enemies: Enemy[], 
     projectilePool: PoolManager<Projectile>,
     damage: number,
-    range: number
+    range: number,
+    player?: Player
   ): ProjectileFire[] {
     // Alternate whip direction
     this.lastDirection *= -1;
@@ -32,14 +34,19 @@ export class WhipBehavior implements IWeaponBehavior {
       // Spread projectiles vertically to create whip width
       const verticalOffset = (i - (this.projectileCount - 1) / 2) * 20;
       
-      // Target position is horizontal from player
+      // Whip spawns at strike position, moves slightly forward
+      const startX = position.x + (this.lastDirection * this.whipLength * 0.5);
+      const startY = position.y + verticalOffset;
       const targetX = position.x + (this.lastDirection * this.whipLength);
       const targetY = position.y + verticalOffset;
       
       projectiles.push({
         projectile,
+        startX,
+        startY,
         targetX,
         targetY,
+        speed: 1200, // Very fast for instant feel
         visuals: {
           color: 0xFFFFFF, // White
           shape: 'rectangle',
