@@ -1,4 +1,5 @@
 import { UPGRADES, UpgradeDefinition } from '../config/upgrades';
+import { WEAPON_UPGRADES, WeaponUpgradeDefinition, hasWeapon, unlockWeapon } from '../config/weaponUpgrades';
 
 export class UpgradeManager {
   private upgradeLevels: Map<string, number> = new Map();
@@ -43,14 +44,22 @@ export class UpgradeManager {
     return true;
   }
 
-  getRandomUpgrades(count: number): UpgradeDefinition[] {
+  getRandomUpgrades(count: number): (UpgradeDefinition | WeaponUpgradeDefinition)[] {
     // Get all available upgrades
     const available = Object.values(UPGRADES).filter(upgrade => 
       this.canUpgrade(upgrade.id)
     );
     
+    // Get available weapon unlocks
+    const weaponUnlocks = Object.values(WEAPON_UPGRADES).filter(weapon =>
+      !hasWeapon(weapon.id)
+    );
+    
+    // Combine all options
+    const allOptions = [...available, ...weaponUnlocks];
+    
     // Shuffle and take the requested count
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    const shuffled = [...allOptions].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
 

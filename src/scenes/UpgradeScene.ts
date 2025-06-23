@@ -1,18 +1,19 @@
 import { Scene } from 'phaser';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { UpgradeDefinition } from '../config/upgrades';
+import { WeaponUpgradeDefinition, unlockWeapon } from '../config/weaponUpgrades';
 
 export class UpgradeScene extends Scene {
   private upgradeManager: UpgradeManager;
-  private selectedUpgrade?: UpgradeDefinition;
-  private onUpgradeSelected?: (upgrade: UpgradeDefinition) => void;
+  private selectedUpgrade?: UpgradeDefinition | WeaponUpgradeDefinition;
+  private onUpgradeSelected?: (upgrade: UpgradeDefinition | WeaponUpgradeDefinition) => void;
 
   constructor() {
     super({ key: 'UpgradeScene' });
     this.upgradeManager = UpgradeManager.getInstance();
   }
 
-  create(data: { onComplete: (upgrade: UpgradeDefinition) => void }): void {
+  create(data: { onComplete: (upgrade: UpgradeDefinition | WeaponUpgradeDefinition) => void }): void {
     // Reset selection state
     this.selectedUpgrade = undefined;
     this.onUpgradeSelected = data.onComplete;
@@ -79,16 +80,17 @@ export class UpgradeScene extends Scene {
     y: number, 
     width: number, 
     height: number, 
-    upgrade: UpgradeDefinition
+    upgrade: UpgradeDefinition | WeaponUpgradeDefinition
   ): void {
     // Card background
     const card = this.add.rectangle(x, y, width, height, 0x333333);
     card.setStrokeStyle(3, 0xffffff);
     card.setInteractive();
     
-    // Current level
-    const currentLevel = this.upgradeManager.getUpgradeLevel(upgrade.id);
-    const levelText = currentLevel > 0 ? `Lv ${currentLevel}` : 'NEW!';
+    // Current level or weapon unlock
+    const isWeapon = 'isWeaponUnlock' in upgrade;
+    const currentLevel = isWeapon ? 0 : this.upgradeManager.getUpgradeLevel(upgrade.id);
+    const levelText = isWeapon ? 'NEW WEAPON!' : (currentLevel > 0 ? `Lv ${currentLevel}` : 'NEW!');
     
     // Category color
     const categoryColors = {
@@ -130,17 +132,30 @@ export class UpgradeScene extends Scene {
     });
     desc.setOrigin(0.5);
     
-    // Max level indicator
-    const maxLevel = this.add.text(
-      x, 
-      y + height/2 - 30,
-      `Max: ${currentLevel}/${upgrade.maxLevel}`,
-      {
-        fontSize: '14px',
-        color: '#999999'
-      }
-    );
-    maxLevel.setOrigin(0.5);
+    // Max level indicator (skip for weapon unlocks)
+    if (!isWeapon) {
+      const maxLevel = this.add.text(
+        x, 
+        y + height/2 - 30,
+        `Max: ${currentLevel}/${upgrade.maxLevel}`,
+        {
+          fontSize: '14px',
+          color: '#999999'
+        }
+      );
+      maxLevel.setOrigin(0.5);
+    } else {
+      // Show weapon icon for weapon unlocks
+      const icon = this.add.text(
+        x,
+        y + height/2 - 30,
+        (upgrade as WeaponUpgradeDefinition).icon || '⚔️',
+        {
+          fontSize: '32px'
+        }
+      );
+      icon.setOrigin(0.5);
+    }
     
     // Hover effect
     card.on('pointerover', () => {
@@ -159,13 +174,17 @@ export class UpgradeScene extends Scene {
     });
   }
 
-  private selectUpgrade(upgrade: UpgradeDefinition): void {
+  private selectUpgrade(upgrade: UpgradeDefinition | WeaponUpgradeDefinition): void {
     if (this.selectedUpgrade) return; // Prevent multiple selections
     
     this.selectedUpgrade = upgrade;
     
-    // Apply the upgrade
-    this.upgradeManager.applyUpgrade(upgrade.id);
+    // Apply the upgrade or unlock weapon
+    if ('isWeaponUnlock' in upgrade) {
+      unlockWeapon(upgrade.id);
+    } else {
+      this.upgradeManager.applyUpgrade(upgrade.id);
+    }
     
     // Notify the game scene
     if (this.onUpgradeSelected) {

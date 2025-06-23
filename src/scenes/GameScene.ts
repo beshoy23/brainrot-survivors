@@ -7,6 +7,7 @@ import { WeaponSystem } from '../systems/WeaponSystem';
 import { PickupSystem } from '../systems/PickupSystem';
 import { GameConfig } from '../config/game';
 import { UpgradeManager } from '../managers/UpgradeManager';
+import { WeaponFactory } from '../weapons/WeaponFactory';
 
 export class GameScene extends Scene {
   private player!: Player;
@@ -340,6 +341,15 @@ export class GameScene extends Scene {
   }
   
   private applyUpgradeEffects(upgrade: any): void {
+    // Check if it's a weapon unlock
+    if (upgrade.isWeaponUnlock) {
+      // Add the new weapon to the weapon system
+      const weapon = WeaponFactory.createWeapon(upgrade.weaponType);
+      this.weaponSystem.addWeapon(weapon);
+      console.log('Unlocked new weapon:', upgrade.name);
+      return;
+    }
+    
     // Handle specific upgrade effects that need immediate application
     const upgradeManager = UpgradeManager.getInstance();
     

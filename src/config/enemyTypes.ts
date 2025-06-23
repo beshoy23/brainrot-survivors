@@ -4,10 +4,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.BASIC]: {
     id: EnemyTypeId.BASIC,
     name: 'Basic Enemy',
-    health: 10,
+    health: 5, // Reduced for higher density
     speed: 150,
-    damage: 10,
-    size: 24,
+    damage: 5, // Reduced damage
+    size: 20, // Smaller for performance
     color: 0xff0000, // Red
     shape: 'square',
     spawnWeight: 10,
@@ -17,10 +17,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.FAST]: {
     id: EnemyTypeId.FAST,
     name: 'Fast Ghost',
-    health: 5,
+    health: 3, // Very fragile
     speed: 280,
-    damage: 5,
-    size: 18,
+    damage: 3,
+    size: 16, // Smaller
     color: 0xff00ff, // Magenta
     shape: 'diamond',
     spawnWeight: 6,
@@ -30,10 +30,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.TANK]: {
     id: EnemyTypeId.TANK,
     name: 'Heavy Tank',
-    health: 50,
+    health: 30, // Reduced from 50
     speed: 80,
-    damage: 20,
-    size: 36,
+    damage: 10, // Reduced from 20
+    size: 32,
     color: 0x800000, // Dark red
     shape: 'square',
     spawnWeight: 3,
@@ -43,23 +43,23 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.SWARM]: {
     id: EnemyTypeId.SWARM,
     name: 'Swarm Bug',
-    health: 3,
+    health: 2, // Very weak individually
     speed: 170,
-    damage: 5,
-    size: 14,
+    damage: 2,
+    size: 12, // Tiny
     color: 0xffaa00, // Orange
     shape: 'circle',
     spawnWeight: 8,
     minWaveTime: 45, // Appears after 45 seconds
-    spawnGroupSize: 3 // Reduced from 8 for better balance
+    spawnGroupSize: 5 // Groups of 5
   },
   
   [EnemyTypeId.ELITE]: {
     id: EnemyTypeId.ELITE,
     name: 'Elite Boss',
-    health: 200,
+    health: 100, // Reduced from 200
     speed: 120,
-    damage: 30,
+    damage: 15, // Reduced from 30
     size: 48,
     color: 0x4b0082, // Indigo
     shape: 'diamond',

@@ -6,6 +6,7 @@ import { Projectile } from '../entities/Projectile';
 import { PoolManager } from '../managers/PoolManager';
 import { WeaponFactory } from '../weapons/WeaponFactory';
 import { MultiShotBehavior } from '../weapons/behaviors/MultiShotBehavior';
+import { VSMultiShotBehavior } from '../weapons/behaviors/VSMultiShotBehavior';
 import { Vector2 } from '../utils/Vector2';
 
 export interface EnemyDeathCallback {
@@ -41,10 +42,12 @@ export class WeaponSystem {
       upgradeManager.getUpgradeLevel('projectileCount') : 0;
     
     this.weapons.forEach(weapon => {
-      if (weapon.behavior instanceof MultiShotBehavior) {
+      if (weapon.behavior instanceof VSMultiShotBehavior) {
+        weapon.behavior.setAdditionalShots(multiShotLevel);
+      } else if (weapon.behavior instanceof MultiShotBehavior) {
         weapon.behavior.setAdditionalShots(multiShotLevel);
       } else if (multiShotLevel > 0 && this.weapons.length === 1) {
-        // Replace basic weapon with multi-shot
+        // Replace basic weapon with VS-style multi-shot
         this.weapons[0] = WeaponFactory.createStarterWeapon();
       }
     });

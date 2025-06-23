@@ -1,13 +1,20 @@
 import { Weapon, WeaponConfig } from '../entities/Weapon';
 import { BasicWeaponBehavior } from './behaviors/BasicWeaponBehavior';
 import { MultiShotBehavior } from './behaviors/MultiShotBehavior';
+import { VSMultiShotBehavior } from './behaviors/VSMultiShotBehavior';
 import { SpreadShotBehavior } from './behaviors/SpreadShotBehavior';
+import { AxeBehavior } from './behaviors/AxeBehavior';
+import { GarlicBehavior } from './behaviors/GarlicBehavior';
+import { WhipBehavior } from './behaviors/WhipBehavior';
 import { GameConfig } from '../config/game';
 
 export enum WeaponType {
   BASIC = 'basic',
   MULTI_SHOT = 'multiShot',
-  SPREAD_SHOT = 'spreadShot'
+  SPREAD_SHOT = 'spreadShot',
+  AXE = 'axe',
+  GARLIC = 'garlic',
+  WHIP = 'whip'
 }
 
 export class WeaponFactory {
@@ -35,6 +42,33 @@ export class WeaponFactory {
           behavior: new SpreadShotBehavior(3, 30)
         });
         
+      case WeaponType.AXE:
+        return new Weapon({
+          damage: baseConfig.damage * 2, // High damage
+          fireRate: 1, // Slower fire rate
+          projectileSpeed: 300,
+          range: 200,
+          behavior: new AxeBehavior()
+        });
+        
+      case WeaponType.GARLIC:
+        return new Weapon({
+          damage: baseConfig.damage * 0.5, // Low damage but constant
+          fireRate: 2, // Ticks twice per second
+          projectileSpeed: 0, // No projectiles
+          range: 100,
+          behavior: new GarlicBehavior()
+        });
+        
+      case WeaponType.WHIP:
+        return new Weapon({
+          damage: baseConfig.damage * 1.5, // Medium-high damage
+          fireRate: 1.5, // Medium fire rate
+          projectileSpeed: 0, // Instant hit
+          range: 150,
+          behavior: new WhipBehavior()
+        });
+        
       default:
         return new Weapon({
           ...baseConfig,
@@ -50,8 +84,11 @@ export class WeaponFactory {
       upgradeManager.getUpgradeLevel('projectileCount') : 0;
     
     if (multiShotLevel > 0) {
-      const weapon = this.createWeapon(WeaponType.MULTI_SHOT);
-      (weapon.behavior as MultiShotBehavior).setAdditionalShots(multiShotLevel);
+      // Use VS-style spread multishot
+      const weapon = new Weapon({
+        ...GameConfig.weapons.basic,
+        behavior: new VSMultiShotBehavior(multiShotLevel)
+      });
       return weapon;
     }
     
