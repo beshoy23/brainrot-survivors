@@ -1,0 +1,46 @@
+export const GameConfig = {
+  player: {
+    speed: 200,
+    maxHealth: 100,
+    hitboxRadius: 14
+  },
+  enemies: {
+    basic: {
+      speed: 150,
+      health: 10,
+      damage: 10,
+      hitboxRadius: 10
+    }
+  },
+  spawning: {
+    initialDelay: 500,
+    baseSpawnRate: 1000,
+    spawnAcceleration: 0.98,
+    minSpawnRate: 300,
+    spawnDistance: 100
+  },
+  pickups: {
+    xpGem: {
+      value: 1,
+      magnetRange: 120,
+      moveSpeed: 300,
+      collectRadius: 20
+    }
+  },
+  progression: {
+    baseXPRequired: 10,
+    xpMultiplier: 1.5,
+    xpGemDropChance: 1.0
+  },
+  camera: {
+    smoothFactor: 0.1
+  },
+  weapons: {
+    basic: {
+      damage: 25,
+      fireRate: 2, // 2 shots per second
+      projectileSpeed: 500,
+      range: 300
+    }
+  }
+};

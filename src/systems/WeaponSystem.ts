@@ -1,0 +1,150 @@
+import { Scene } from 'phaser';
+import { Player } from '../entities/Player';
+import { Enemy } from '../entities/Enemy';
+import { Weapon } from '../entities/Weapon';
+import { Projectile } from '../entities/Projectile';
+import { PoolManager } from '../managers/PoolManager';
+import { WeaponFactory } from '../weapons/WeaponFactory';
+import { MultiShotBehavior } from '../weapons/behaviors/MultiShotBehavior';
+import { Vector2 } from '../utils/Vector2';
+
+export interface EnemyDeathCallback {
+  (x: number, y: number): void;
+}
+
+export class WeaponSystem {
+  private weapons: Weapon[] = [];
+  private projectilePool: PoolManager<Projectile>;
+  private activeProjectiles: Set<Projectile> = new Set();
+  public onEnemyDeath?: EnemyDeathCallback;
+
+  constructor(private scene: Scene) {
+    // Initialize projectile pool
+    this.projectilePool = new PoolManager(
+      () => new Projectile(scene),
+      (projectile) => projectile.reset(),
+      100 // Increased for multi-shot
+    );
+    
+    // Create starter weapon
+    this.addWeapon(WeaponFactory.createStarterWeapon());
+  }
+
+  addWeapon(weapon: Weapon): void {
+    this.weapons.push(weapon);
+  }
+  
+  updateWeaponsForUpgrades(): void {
+    // Update multi-shot behavior if needed
+    const upgradeManager = (window as any).upgradeManager;
+    const multiShotLevel = upgradeManager ? 
+      upgradeManager.getUpgradeLevel('projectileCount') : 0;
+    
+    this.weapons.forEach(weapon => {
+      if (weapon.behavior instanceof MultiShotBehavior) {
+        weapon.behavior.setAdditionalShots(multiShotLevel);
+      } else if (multiShotLevel > 0 && this.weapons.length === 1) {
+        // Replace basic weapon with multi-shot
+        this.weapons[0] = WeaponFactory.createStarterWeapon();
+      }
+    });
+  }
+
+  update(deltaTime: number, currentTime: number, player: Player, enemies: Enemy[]): void {
+    // Update all active projectiles
+    const projectilesToRemove: Projectile[] = [];
+    
+    this.activeProjectiles.forEach(projectile => {
+      const expired = projectile.update(deltaTime);
+      
+      if (expired || !projectile.sprite.active) {
+        projectilesToRemove.push(projectile);
+      } else {
+        // Check collision with enemies
+        enemies.forEach(enemy => {
+          if (!enemy.sprite.active) return;
+          
+          const dx = projectile.x - enemy.x;
+          const dy = projectile.y - enemy.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 15) { // Hit radius
+            const isDead = enemy.takeDamage(projectile.damage);
+            
+            if (isDead) {
+              // Enemy died - notify callback
+              if (this.onEnemyDeath) {
+                this.onEnemyDeath(enemy.x, enemy.y);
+              }
+            } else {
+              // Flash red on hit (Graphics objects use fillStyle, not tint)
+              if (enemy.sprite instanceof Phaser.GameObjects.Graphics) {
+                // Redraw with tint effect
+                const originalColor = enemy.enemyType.color;
+                enemy.sprite.clear();
+                enemy.sprite.fillStyle(0xff6666, 1);
+                enemy.drawEnemy();
+                
+                this.scene.time.delayedCall(100, () => {
+                  if (enemy.sprite.active) {
+                    enemy.sprite.clear();
+                    enemy.sprite.fillStyle(originalColor, 1);
+                    enemy.drawEnemy();
+                  }
+                });
+              }
+            }
+            
+            projectilesToRemove.push(projectile);
+          }
+        });
+      }
+    });
+    
+    // Remove expired projectiles
+    projectilesToRemove.forEach(projectile => {
+      this.activeProjectiles.delete(projectile);
+      this.projectilePool.release(projectile);
+    });
+    
+    // Fire weapons using their behaviors
+    const playerPos = player.getPosition();
+    
+    this.weapons.forEach(weapon => {
+      if (!weapon.canFire(currentTime)) return;
+      
+      // Use weapon behavior to determine projectiles
+      const projectileFires = weapon.behavior.fire(
+        playerPos,
+        enemies,
+        this.projectilePool,
+        weapon.getDamage(),
+        weapon.range
+      );
+      
+      // Fire each projectile
+      projectileFires.forEach(({ projectile, targetX, targetY }) => {
+        projectile.fire(
+          playerPos.x,
+          playerPos.y,
+          targetX,
+          targetY,
+          weapon.getDamage()
+        );
+        
+        this.activeProjectiles.add(projectile);
+      });
+      
+      if (projectileFires.length > 0) {
+        weapon.updateFireTime(currentTime);
+      }
+    });
+  }
+
+  reset(): void {
+    this.activeProjectiles.forEach(projectile => {
+      this.projectilePool.release(projectile);
+    });
+    this.activeProjectiles.clear();
+  }
+}
