@@ -77,6 +77,16 @@ export class VirtualJoystick {
     // Touch start
     this.touchZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.touchId === null) {
+        // Check if touch is in UI exclusion zones (top-right for pause button)
+        const uiExclusionSize = 80; // Size of UI exclusion zone
+        const screenWidth = this.scene.scale.width;
+        const screenHeight = this.scene.scale.height;
+        
+        // Top-right exclusion zone for pause button
+        if (pointer.x > screenWidth - uiExclusionSize && pointer.y < uiExclusionSize) {
+          return; // Don't handle this touch - let UI elements handle it
+        }
+        
         this.touchId = pointer.id;
         this.isDragging = true;
         
