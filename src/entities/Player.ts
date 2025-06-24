@@ -20,6 +20,12 @@ export class Player {
   // Mobile controls
   private virtualJoystick?: VirtualJoystick;
   private isMobile: boolean;
+  
+  // Afterimage trail effect
+  private afterimagePool: GameObjects.Graphics[] = [];
+  private lastAfterimageTime: number = 0;
+  private afterimageInterval: number = 50; // ms between afterimages
+  private isMoving: boolean = false;
 
   constructor(scene: Scene, x: number, y: number) {
     // Create player as a graphics object for better appearance
@@ -43,9 +49,17 @@ export class Player {
     // Handle input
     this.handleMovement();
     
+    // Check if moving
+    this.isMoving = this.velocity.x !== 0 || this.velocity.y !== 0;
+    
     // Update position
     this.sprite.x += this.velocity.x * deltaTime / 1000;
     this.sprite.y += this.velocity.y * deltaTime / 1000;
+    
+    // Create afterimage trail when moving
+    if (this.isMoving) {
+      this.updateAfterimage();
+    }
     
     // Keep player within bounds (with some margin)
     const margin = 50;
@@ -192,7 +206,48 @@ export class Player {
     return graphics;
   }
 
+  private updateAfterimage(): void {
+    const now = Date.now();
+    if (now - this.lastAfterimageTime < this.afterimageInterval) {
+      return;
+    }
+    
+    this.lastAfterimageTime = now;
+    this.createAfterimage();
+  }
+  
+  private createAfterimage(): void {
+    const scene = this.sprite.scene;
+    
+    // Create afterimage graphics
+    const afterimage = scene.add.graphics();
+    afterimage.setPosition(this.sprite.x, this.sprite.y);
+    afterimage.setDepth(this.sprite.depth - 1);
+    
+    // Copy player appearance but with reduced opacity and blue tint
+    afterimage.fillGradientStyle(0x4a90e2, 0x2c5aa0, 0x1e3a8a, 0x4a90e2, 0.3);
+    afterimage.fillCircle(0, 0, 12);
+    
+    afterimage.fillStyle(0x87ceeb, 0.2);
+    afterimage.fillCircle(0, 0, 8);
+    
+    // Fade out and destroy
+    scene.tweens.add({
+      targets: afterimage,
+      alpha: 0,
+      scaleX: 0.8,
+      scaleY: 0.8,
+      duration: 200,
+      ease: 'Power2',
+      onComplete: () => {
+        afterimage.destroy();
+      }
+    });
+  }
+  
   destroy(): void {
+    this.afterimagePool.forEach(afterimage => afterimage.destroy());
+    this.afterimagePool = [];
     this.sprite.destroy();
   }
 }
