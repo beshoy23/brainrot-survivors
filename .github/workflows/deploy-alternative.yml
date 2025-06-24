@@ -25,6 +25,15 @@ jobs:
       - name: Build
         run: npm run build
         
+      - name: Debug build output
+        run: |
+          echo "=== DIST FOLDER CONTENTS ==="
+          ls -la dist/
+          echo "\n=== DIST INDEX.HTML ==="
+          cat dist/index.html
+          echo "\n=== ASSETS FOLDER ==="
+          ls -la dist/assets/
+        
       - name: Deploy with peaceiris
         uses: peaceiris/actions-gh-pages@v3
         with:

@@ -1,0 +1,60 @@
+name: Test Direct File Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Verify build output
+        run: |
+          echo "=== BUILT INDEX.HTML ==="
+          cat dist/index.html
+          echo -e "\n=== CHECKING SCRIPT TAG ==="
+          grep "script" dist/index.html
+        
+      - name: Deploy to gh-pages branch
+        run: |
+          # Configure git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Create a temporary directory
+          mkdir temp-deploy
+          cp -r dist/* temp-deploy/
+          
+          # Switch to gh-pages branch (create if doesn't exist)
+          git checkout --orphan gh-pages-new
+          git rm -rf .
+          
+          # Copy built files
+          cp -r temp-deploy/* .
+          
+          # Add and commit
+          git add .
+          git commit -m "Deploy built files $(date)"
+          
+          # Force push to gh-pages
+          git push -f origin gh-pages-new:gh-pages
+          
+          echo "=== VERIFYING DEPLOYED FILES ==="
+          cat index.html
