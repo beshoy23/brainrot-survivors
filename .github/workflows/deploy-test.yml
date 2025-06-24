@@ -60,8 +60,10 @@ jobs:
           echo "=== FINAL INDEX.HTML ==="
           cat index.html
           
-          # Add and commit
-          git add .
+          # Add ONLY the specific files we want
+          git add index.html
+          git add assets/
+          git status
           git commit -m "Deploy built files $(date)"
           
           # Force push to gh-pages
