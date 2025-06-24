@@ -5,13 +5,14 @@ on:
     branches: [ master ]
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -51,10 +52,16 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
+      - name: Verify upload contents
+        run: |
+          echo "About to upload these files:"
+          find dist -type f -exec echo "{}" \; -exec head -5 "{}" \; -exec echo "---" \;
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+          retention-days: 1
           
       - name: Deploy to GitHub Pages
         id: deployment
