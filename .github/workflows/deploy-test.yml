@@ -44,27 +44,38 @@ jobs:
           echo "=== DIST INDEX.HTML ==="
           cat dist/index.html
           
+          # Create a temporary directory for clean deployment
+          mkdir -p /tmp/gh-pages-deploy
+          cp dist/index.html /tmp/gh-pages-deploy/
+          cp -r dist/assets /tmp/gh-pages-deploy/
+          
+          # Verify what we're deploying
+          echo "=== CLEAN DEPLOY DIRECTORY ==="
+          ls -la /tmp/gh-pages-deploy/
+          echo "=== CLEAN INDEX.HTML ==="
+          cat /tmp/gh-pages-deploy/index.html
+          
           # Create a completely new orphan branch
-          git checkout --orphan gh-pages-final
+          git checkout --orphan gh-pages-clean
           
-          # Remove all files from git index
+          # Remove all files from git index and working directory
           git rm -rf . || true
+          rm -rf .* * || true
           
-          # Copy built files directly from dist
-          cp dist/index.html .
-          cp -r dist/assets .
+          # Copy only our built files
+          cp /tmp/gh-pages-deploy/index.html .
+          cp -r /tmp/gh-pages-deploy/assets .
           
-          # Verify what we have
+          # Verify final state
           echo "=== FINAL DEPLOYED FILES ==="
           ls -la
           echo "=== FINAL INDEX.HTML ==="
           cat index.html
           
-          # Add ONLY the specific files we want
-          git add index.html
-          git add assets/
+          # Add and commit
+          git add .
           git status
           git commit -m "Deploy built files $(date)"
           
           # Force push to gh-pages
-          git push -f origin gh-pages-final:gh-pages
+          git push -f origin gh-pages-clean:gh-pages
