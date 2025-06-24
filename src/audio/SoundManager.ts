@@ -82,41 +82,12 @@ export class SoundManager {
   }
 
   private playDeathSound(): void {
-    // Satisfying enemy death with explosion effect
-    const baseFreq = 200 + Math.random() * 100;
+    // Quick, subtle death sound for mass enemies
+    const pitch = 150 + Math.random() * 100;
     
-    // Main death sound
-    this.playTone(baseFreq, 0.15, 'sawtooth', 0.3);
-    this.playTone(baseFreq * 0.5, 0.2, 'triangle', 0.2, 0.02);
-    
-    // Explosion crackle
-    for (let i = 0; i < 4; i++) {
-      this.playTone(100 + Math.random() * 200, 0.05, 'square', 0.15, i * 0.03);
-    }
-    
-    // Descending tail
-    if (this.audioContext) {
-      try {
-        const osc = this.audioContext.createOscillator();
-        const gain = this.audioContext.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.audioContext.destination);
-        
-        const startTime = this.audioContext.currentTime + 0.05;
-        osc.frequency.setValueAtTime(300, startTime);
-        osc.frequency.exponentialRampToValueAtTime(50, startTime + 0.25);
-        osc.type = 'triangle';
-        
-        gain.gain.setValueAtTime(0.2 * this.volume, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-        
-        osc.start(startTime);
-        osc.stop(startTime + 0.25);
-      } catch (e) {
-        // Ignore
-      }
-    }
+    // Very brief, satisfying pop
+    this.playTone(pitch, 0.04, 'triangle', 0.12);
+    this.playTone(pitch * 1.5, 0.02, 'sine', 0.08, 0.01);
   }
 
   private playShootSound(): void {
@@ -152,7 +123,7 @@ export class SoundManager {
       'shoot': 25,   // Very short for rapid fire
       'hit': 20,
       'pickup': 50,
-      'death': 30,
+      'death': 15,   // Very short for mass enemies
       'levelup': 500 // Longer for important sounds
     };
     
