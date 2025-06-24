@@ -38,23 +38,35 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # Create a temporary directory
-          mkdir temp-deploy
+          # Create a clean temporary directory with ONLY dist files
+          mkdir -p temp-deploy
           cp -r dist/* temp-deploy/
           
-          # Switch to gh-pages branch (create if doesn't exist)
-          git checkout --orphan gh-pages-new
-          git rm -rf .
+          # List what we're about to deploy
+          echo "=== FILES TO DEPLOY ==="
+          ls -la temp-deploy/
+          echo "=== TEMP DEPLOY INDEX.HTML ==="
+          cat temp-deploy/index.html
           
-          # Copy built files
+          # Switch to gh-pages branch (create if doesn't exist)
+          git checkout --orphan gh-pages-clean
+          
+          # Remove EVERYTHING from git and filesystem
+          git rm -rf . || true
+          find . -maxdepth 1 ! -name '.git' -exec rm -rf {} + || true
+          
+          # Copy ONLY the built files
           cp -r temp-deploy/* .
+          
+          # Verify what we have
+          echo "=== FINAL DEPLOYED FILES ==="
+          ls -la
+          echo "=== FINAL INDEX.HTML ==="
+          cat index.html
           
           # Add and commit
           git add .
-          git commit -m "Deploy built files $(date)"
+          git commit -m "Deploy ONLY built files $(date)"
           
           # Force push to gh-pages
-          git push -f origin gh-pages-new:gh-pages
-          
-          echo "=== VERIFYING DEPLOYED FILES ==="
-          cat index.html
+          git push -f origin gh-pages-clean:gh-pages
