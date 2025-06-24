@@ -6,7 +6,7 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     name: 'Basic Enemy',
     health: 3, // Further reduced for high density
     speed: 120, // Slower for dodgeability
-    damage: 2, // Much lower damage
+    damage: 0.5, // VS-style: continuous contact damage
     size: 18, // Smaller
     color: 0xff0000, // Red
     shape: 'square',
@@ -19,9 +19,9 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     name: 'Fast Ghost',
     health: 2, // Very fragile for high numbers
     speed: 220, // Reduced from 280
-    damage: 1, // Minimal damage
+    damage: 0.3, // VS-style: fast but weak
     size: 14, // Smaller
-    color: 0xff00ff, // Magenta
+    color: 0x00ff00, // Green - distinct from gems
     shape: 'diamond',
     spawnWeight: 6,
     minWaveTime: 30 // Appears after 30 seconds
@@ -32,7 +32,7 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     name: 'Heavy Tank',
     health: 20, // Reduced for faster kills
     speed: 60, // Slower
-    damage: 5, // Much reduced
+    damage: 1.5, // VS-style: strong but slow
     size: 28, // Smaller
     color: 0x800000, // Dark red
     shape: 'square',
@@ -45,8 +45,8 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     name: 'Swarm Bug',
     health: 1, // One-shot kills for high density
     speed: 140, // Reduced speed
-    damage: 1, // Minimal damage
-    size: 10, // Very tiny
+    damage: 0.2, // VS-style: swarm damage
+    size: 12, // Small but visible
     color: 0xffaa00, // Orange
     shape: 'circle',
     spawnWeight: 8,
@@ -59,7 +59,7 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     name: 'Elite Boss',
     health: 60, // Reduced for faster boss fights
     speed: 100, // Slower
-    damage: 8, // Much reduced
+    damage: 2.5, // VS-style: boss damage
     size: 40, // Smaller
     color: 0x4b0082, // Indigo
     shape: 'diamond',

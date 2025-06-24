@@ -100,10 +100,10 @@ export class SpawnSystem {
     // VS actually spawns ONE enemy type at a time when above minimum
     const enemyType = getRandomEnemyType(availableTypes);
     
-    // For swarm, spawn smaller groups
-    const spawnCount = enemyType.id === EnemyTypeId.SWARM ? 3 : 1;
-    
-    for (let i = 0; i < spawnCount; i++) {
+    // VS-style swarm spawning: spawn groups with coordinated movement
+    if (enemyType.id === EnemyTypeId.SWARM) {
+      this.spawnSwarmGroup(playerPos, enemyType);
+    } else {
       this.spawnSingleEnemy(playerPos, enemyType);
     }
   }
@@ -140,14 +140,63 @@ export class SpawnSystem {
     const distance = Math.max(this.scene.scale.width, this.scene.scale.height) / 2 + 
                     GameConfig.spawning.spawnDistance;
     
-    // Add some randomness for swarm spawns
-    const offsetAngle = (Math.random() - 0.5) * 0.3;
-    const finalAngle = angle + offsetAngle;
-    
-    const x = playerPos.x + Math.cos(finalAngle) * distance;
-    const y = playerPos.y + Math.sin(finalAngle) * distance;
+    const x = playerPos.x + Math.cos(angle) * distance;
+    const y = playerPos.y + Math.sin(angle) * distance;
     
     enemy.spawn(x, y, enemyType);
+  }
+  
+  private spawnSwarmGroup(playerPos: Vector2, enemyType: any): void {
+    // VS-style: spawn 8-12 swarm enemies in a line formation
+    const swarmSize = 8 + Math.floor(Math.random() * 5); // 8-12 enemies
+    
+    // Pick a random side of the screen to spawn from
+    const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+    const screenW = this.scene.scale.width;
+    const screenH = this.scene.scale.height;
+    
+    let startX, startY, angle;
+    
+    switch(side) {
+      case 0: // Top - sweep downward
+        startX = playerPos.x - screenW/3 + Math.random() * (screenW * 2/3);
+        startY = playerPos.y - screenH/2 - 100;
+        angle = Math.PI/2 + (Math.random() - 0.5) * 0.5; // Roughly downward
+        break;
+      case 1: // Right - sweep leftward  
+        startX = playerPos.x + screenW/2 + 100;
+        startY = playerPos.y - screenH/3 + Math.random() * (screenH * 2/3);
+        angle = Math.PI + (Math.random() - 0.5) * 0.5; // Roughly leftward
+        break;
+      case 2: // Bottom - sweep upward
+        startX = playerPos.x - screenW/3 + Math.random() * (screenW * 2/3);
+        startY = playerPos.y + screenH/2 + 100;
+        angle = -Math.PI/2 + (Math.random() - 0.5) * 0.5; // Roughly upward
+        break;
+      default: // Left - sweep rightward
+        startX = playerPos.x - screenW/2 - 100;
+        startY = playerPos.y - screenH/3 + Math.random() * (screenH * 2/3);
+        angle = (Math.random() - 0.5) * 0.5; // Roughly rightward
+        break;
+    }
+    
+    // Spawn swarm in formation
+    for (let i = 0; i < swarmSize; i++) {
+      const enemy = this.enemyPool.acquire();
+      
+      // Spread enemies in a line formation
+      const spacing = 30; // Distance between swarm members
+      const offsetX = (i - swarmSize/2) * spacing * Math.cos(angle + Math.PI/2);
+      const offsetY = (i - swarmSize/2) * spacing * Math.sin(angle + Math.PI/2);
+      
+      const finalX = startX + offsetX;
+      const finalY = startY + offsetY;
+      
+      enemy.spawn(finalX, finalY, enemyType, angle);
+      // All swarm members move in the same direction
+    }
+    
+    // VS-style swarm spawned successfully
   }
   
   private spawnElite(playerPos: Vector2): void {

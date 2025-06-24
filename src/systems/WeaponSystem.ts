@@ -13,11 +13,16 @@ export interface EnemyDeathCallback {
   (x: number, y: number): void;
 }
 
+export interface DamageDealtCallback {
+  (damage: number): void;
+}
+
 export class WeaponSystem {
   private weapons: Weapon[] = [];
   private projectilePool: PoolManager<Projectile>;
   private activeProjectiles: Set<Projectile> = new Set();
   public onEnemyDeath?: EnemyDeathCallback;
+  public onDamageDealt?: DamageDealtCallback;
 
   constructor(private scene: Scene) {
     // Initialize projectile pool
@@ -73,6 +78,14 @@ export class WeaponSystem {
           
           if (distance < 15) { // Hit radius
             const isDead = enemy.takeDamage(projectile.damage);
+            
+            // VS-style damage number popup
+            this.createDamageNumber(enemy.x, enemy.y, projectile.damage);
+            
+            // Track damage dealt
+            if (this.onDamageDealt) {
+              this.onDamageDealt(projectile.damage);
+            }
             
             if (isDead) {
               // Enemy died - notify callback
@@ -154,5 +167,54 @@ export class WeaponSystem {
       this.projectilePool.release(projectile);
     });
     this.activeProjectiles.clear();
+  }
+  
+  private createDamageNumber(x: number, y: number, damage: number, isCritical: boolean = false): void {
+    // VS-style damage number popup
+    const fontSize = isCritical ? '20px' : '16px';
+    const color = isCritical ? '#ff3333' : '#ffff00'; // Red for crits, yellow for normal
+    
+    const damageText = this.scene.add.text(x, y - 10, Math.round(damage).toString(), {
+      fontSize: fontSize,
+      color: color,
+      stroke: '#000000',
+      strokeThickness: 3,
+      fontFamily: 'Arial Black, Arial',
+      fontStyle: 'bold'
+    });
+    damageText.setOrigin(0.5);
+    damageText.setDepth(100); // High depth to appear above everything
+    
+    // Random slight offset for multiple hits
+    const offsetX = (Math.random() - 0.5) * 20;
+    const offsetY = (Math.random() - 0.5) * 10;
+    
+    // VS-style animation: float up and fade out
+    const targetY = isCritical ? y - 50 + offsetY : y - 40 + offsetY;
+    const targetScale = isCritical ? 1.5 : 1.2;
+    
+    this.scene.tweens.add({
+      targets: damageText,
+      x: x + offsetX,
+      y: targetY,
+      alpha: 0,
+      scaleX: targetScale,
+      scaleY: targetScale,
+      duration: 700,
+      ease: 'Power2',
+      onComplete: () => damageText.destroy()
+    });
+    
+    // Add extra pop effect for criticals
+    if (isCritical) {
+      damageText.setScale(1.5);
+      this.scene.tweens.add({
+        targets: damageText,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 100,
+        ease: 'Back.out'
+      });
+    }
   }
 }

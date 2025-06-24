@@ -52,6 +52,11 @@ export class PickupSystem {
     // Get gems near player
     const nearbyGems = this.spatialGrid.getNearby(playerX, playerY, magnetRange);
     
+    // Calculate player's current speed (with upgrades)
+    const speedMultiplier = upgradeManager ? 
+      (1 + (upgradeManager.getUpgradeLevel('moveSpeed') * 0.1)) : 1;
+    const playerSpeed = GameConfig.player.speed * speedMultiplier;
+    
     // Update all active gems
     const gemsToRemove: XPGem[] = [];
     
@@ -59,7 +64,7 @@ export class PickupSystem {
       if (!gem.sprite.active) return;
       
       // Update gem movement and magnetism
-      gem.update(deltaTime, playerX, playerY, magnetRange);
+      gem.update(deltaTime, playerX, playerY, magnetRange, playerSpeed);
       
       // Check collection
       const dx = playerX - gem.x;
@@ -67,18 +72,20 @@ export class PickupSystem {
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance < collectRadius) {
+        gem.collect(); // Mark as being collected
         xpCollected += gem.value;
         gemsToRemove.push(gem);
         
-        // Collection effect
+        // VS-style collection effects
         this.createCollectionEffect(gem.x, gem.y);
+        this.createXPPopup(gem.x, gem.y, gem.value);
       }
     });
     
     // Update non-nearby gems (just floating animation)
     this.activeGems.forEach(gem => {
       if (!nearbyGems.includes(gem) && gem.sprite.active) {
-        gem.update(deltaTime, playerX, playerY, 0); // 0 range = no magnetism
+        gem.update(deltaTime, playerX, playerY, 0, playerSpeed); // 0 range = no magnetism
       }
     });
     
@@ -92,21 +99,73 @@ export class PickupSystem {
   }
 
   private createCollectionEffect(x: number, y: number): void {
-    // Simple collection visual effect
+    // VS-style collection burst effect
     const effect = this.scene.add.graphics();
-    effect.fillStyle(0x00ff00, 0.5);
-    effect.fillCircle(0, 0, 15);
+    effect.fillStyle(0x00ff00, 0.8);
+    effect.lineStyle(2, 0xffffff, 1);
+    effect.fillCircle(0, 0, 8);
+    effect.strokeCircle(0, 0, 8);
     effect.setPosition(x, y);
     effect.setDepth(4);
     
-    // Fade out and scale up
+    // VS-style: quick expand with bright flash
     this.scene.tweens.add({
       targets: effect,
-      scaleX: 2,
-      scaleY: 2,
+      scaleX: 3,
+      scaleY: 3,
       alpha: 0,
-      duration: 300,
+      duration: 200,
+      ease: 'Power2',
       onComplete: () => effect.destroy()
+    });
+    
+    // Create sparkle particles
+    for (let i = 0; i < 4; i++) {
+      const particle = this.scene.add.graphics();
+      particle.fillStyle(0xffffff, 1);
+      particle.fillCircle(0, 0, 2);
+      particle.setPosition(x, y);
+      particle.setDepth(5);
+      
+      const angle = (i / 4) * Math.PI * 2;
+      const distance = 20 + Math.random() * 10;
+      
+      this.scene.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        alpha: 0,
+        scaleX: 0,
+        scaleY: 0,
+        duration: 300,
+        ease: 'Power2',
+        onComplete: () => particle.destroy()
+      });
+    }
+  }
+  
+  private createXPPopup(x: number, y: number, value: number): void {
+    // VS-style XP number popup
+    const text = this.scene.add.text(x, y, `+${value}`, {
+      fontSize: '14px',
+      color: '#00ff00',
+      stroke: '#000000',
+      strokeThickness: 2,
+      fontFamily: 'Arial'
+    });
+    text.setOrigin(0.5);
+    text.setDepth(6);
+    
+    // Float up and fade
+    this.scene.tweens.add({
+      targets: text,
+      y: y - 30,
+      alpha: 0,
+      scaleX: 1.2,
+      scaleY: 1.2,
+      duration: 600,
+      ease: 'Power2',
+      onComplete: () => text.destroy()
     });
   }
 

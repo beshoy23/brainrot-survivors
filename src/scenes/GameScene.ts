@@ -8,6 +8,11 @@ import { PickupSystem } from '../systems/PickupSystem';
 import { GameConfig } from '../config/game';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { WeaponFactory } from '../weapons/WeaponFactory';
+import { VirtualJoystick } from '../mobile/VirtualJoystick';
+import { TouchInputManager } from '../mobile/TouchInputManager';
+import { DeviceDetection } from '../mobile/DeviceDetection';
+import { MobileConfig, getMobileUIScale } from '../mobile/MobileConfig';
+import { SoundManager } from '../audio/SoundManager';
 
 export class GameScene extends Scene {
   private player!: Player;
@@ -29,6 +34,23 @@ export class GameScene extends Scene {
   private debugText!: Phaser.GameObjects.Text;
   private balanceText!: Phaser.GameObjects.Text;
   
+  // Game stats for pause menu
+  private enemiesKilled: number = 0;
+  private totalXP: number = 0;
+  private damageDealt: number = 0;
+  
+  // Pause button
+  private pauseButton!: Phaser.GameObjects.Container;
+  
+  // Mobile controls
+  private virtualJoystick?: VirtualJoystick;
+  private touchInputManager?: TouchInputManager;
+  private isMobile: boolean = false;
+  private uiScale: number = 1;
+  
+  // Audio
+  private soundManager!: SoundManager;
+  
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -36,6 +58,10 @@ export class GameScene extends Scene {
   create(): void {
     // Initialize upgrade manager globally
     (window as any).upgradeManager = UpgradeManager.getInstance();
+    
+    // Check if mobile
+    this.isMobile = (window as any).isMobile || false;
+    this.uiScale = this.isMobile ? getMobileUIScale() : 1;
     
     // Add a background so we can see the game area
     this.add.rectangle(0, 0, this.scale.width * 2, this.scale.height * 2, 0x1a1a1a)
@@ -67,11 +93,21 @@ export class GameScene extends Scene {
     this.weaponSystem = new WeaponSystem(this);
     this.pickupSystem = new PickupSystem(this);
     
-    // Set up weapon system callback for gem drops
+    // Initialize audio
+    this.soundManager = new SoundManager(this);
+    
+    // Set up weapon system callbacks
     this.weaponSystem.onEnemyDeath = (x: number, y: number) => {
+      this.enemiesKilled++; // Track kills
+      this.soundManager.play('death', { volume: 0.2 });
       if (Math.random() <= GameConfig.progression.xpGemDropChance) {
+        // VS-style: gems sit still until player approaches
         this.pickupSystem.spawnGem(x, y, 1);
       }
+    };
+    
+    this.weaponSystem.onDamageDealt = (damage: number) => {
+      this.damageDealt += damage; // Track total damage
     };
     
     // Set up camera to follow player
@@ -79,17 +115,29 @@ export class GameScene extends Scene {
       GameConfig.camera.smoothFactor, 
       GameConfig.camera.smoothFactor
     );
-    this.cameras.main.setDeadzone(100, 100);
-    this.cameras.main.setBounds(0, 0, this.scale.width * 2, this.scale.height * 2);
+    this.cameras.main.setDeadzone(50, 50);
+    
+    // Set camera bounds with margin to keep player visible
+    const margin = 100; // Keep player at least 100px from edge
+    this.cameras.main.setBounds(
+      -margin, 
+      -margin, 
+      this.scale.width * 2 + margin * 2, 
+      this.scale.height * 2 + margin * 2
+    );
     
     // Create UI
     this.createUI();
     
+    // Create mobile controls if needed
+    if (this.isMobile) {
+      this.createMobileControls();
+    }
+    
     // Reset survival time
     this.survivalTime = 0;
     
-    // Debug: Log that scene started
-    console.log('Game scene started. Player at:', this.player.sprite.x, this.player.sprite.y);
+    // Game scene initialization complete
   }
 
   update(time: number, delta: number): void {
@@ -115,165 +163,213 @@ export class GameScene extends Scene {
     // Update pickups and check for level up
     const xpCollected = this.pickupSystem.update(delta, this.player);
     if (xpCollected > 0) {
+      this.soundManager.play('pickup', { volume: 0.3 });
       // Apply XP bonus upgrade
       const upgradeManager = UpgradeManager.getInstance();
       const xpMultiplier = 1 + (upgradeManager.getUpgradeLevel('xpBonus') * 0.2);
       const actualXP = Math.floor(xpCollected * xpMultiplier);
       
       const leveledUp = this.player.addExperience(actualXP);
+      this.totalXP += actualXP; // Track total XP
       if (leveledUp) {
+        this.soundManager.play('levelup', { volume: 0.5 });
         this.onLevelUp();
       }
     }
   }
 
   private createUI(): void {
-    // Health bar background
+    // Clean, minimal HUD design
+    const padding = 16;
+    const barHeight = 4;
+    const fontSize = this.isMobile ? '18px' : '16px';
+    
+    // HP Bar - Top left, minimal
     this.healthBar = this.add.graphics();
     this.healthBar.setScrollFactor(0);
     this.healthBar.setDepth(100);
     
-    // Health text
-    this.healthText = this.add.text(16, 16, '', {
-      fontSize: '20px',
-      color: '#ffffff'
+    // HP Text - small and clean
+    this.healthText = this.add.text(padding, padding, '', {
+      fontSize: fontSize,
+      color: '#ffffff',
+      fontFamily: 'monospace'
     });
     this.healthText.setScrollFactor(0);
     this.healthText.setDepth(101);
+    this.healthText.setAlpha(0.9);
     
-    // Time survived
-    this.timeText = this.add.text(16, 50, '', {
-      fontSize: '18px',
-      color: '#ffffff'
-    });
-    this.timeText.setScrollFactor(0);
-    this.timeText.setDepth(101);
-    
-    // Enemy count
-    this.enemyCountText = this.add.text(16, 80, '', {
-      fontSize: '18px',
-      color: '#ffffff'
-    });
-    this.enemyCountText.setScrollFactor(0);
-    this.enemyCountText.setDepth(101);
-    
-    // XP bar
+    // XP Bar - Bottom of screen, full width
     this.xpBar = this.add.graphics();
     this.xpBar.setScrollFactor(0);
     this.xpBar.setDepth(100);
     
-    // XP text
-    this.xpText = this.add.text(16, 110, '', {
-      fontSize: '16px',
-      color: '#ffffff'
-    });
-    this.xpText.setScrollFactor(0);
-    this.xpText.setDepth(101);
-    
-    // Level text
-    this.levelText = this.add.text(this.scale.width - 16, 16, '', {
-      fontSize: '24px',
-      color: '#ffff00'
+    // Level indicator - top right, minimal
+    this.levelText = this.add.text(this.scale.width - padding, padding, '', {
+      fontSize: fontSize,
+      color: '#ffffff',
+      fontFamily: 'monospace'
     });
     this.levelText.setOrigin(1, 0);
     this.levelText.setScrollFactor(0);
     this.levelText.setDepth(101);
+    this.levelText.setAlpha(0.9);
     
-    // Debug text for upgrades
-    this.debugText = this.add.text(16, 140, '', {
-      fontSize: '14px',
-      color: '#00ff00'
+    // Time - center top, large and clean
+    this.timeText = this.add.text(this.scale.width / 2, padding, '', {
+      fontSize: this.isMobile ? '24px' : '20px',
+      color: '#ffffff',
+      fontFamily: 'monospace'
     });
-    this.debugText.setScrollFactor(0);
-    this.debugText.setDepth(101);
+    this.timeText.setOrigin(0.5, 0);
+    this.timeText.setScrollFactor(0);
+    this.timeText.setDepth(101);
     
-    // Balance text
-    this.balanceText = this.add.text(16, 170, '', {
-      fontSize: '12px',
-      color: '#ffaa00'
-    });
-    this.balanceText.setScrollFactor(0);
-    this.balanceText.setDepth(101);
+    // Hide enemy count and XP text - too cluttered
+    this.enemyCountText = this.add.text(0, 0, '');
+    this.enemyCountText.setVisible(false);
+    this.xpText = this.add.text(0, 0, '');
+    this.xpText.setVisible(false);
+    
+    // Debug text - hide completely
+    this.debugText = this.add.text(0, 0, '');
+    this.debugText.setVisible(false);
+    this.balanceText = this.add.text(0, 0, '');
+    this.balanceText.setVisible(false);
+    
+    // Pause button - clean minimal design
+    this.createPauseButton();
+    
+    // REMOVED - Cleanup complete
   }
 
   private updateUI(): void {
-    // Update health bar
+    // Clean, minimal UI updates
+    const padding = 16;
+    
+    // Update health bar - thin line under HP text
     this.healthBar.clear();
-    
-    // Background
-    this.healthBar.fillStyle(0x222222);
-    this.healthBar.fillRect(16, 16, 200, 24);
-    
-    // Health fill
     const healthPercent = this.player.health / this.player.maxHealth;
-    this.healthBar.fillStyle(healthPercent > 0.3 ? 0x00ff00 : 0xff0000);
-    this.healthBar.fillRect(18, 18, 196 * healthPercent, 20);
+    const barWidth = 100;
+    const barHeight = 3;
+    const barY = padding + 20;
     
-    // Update texts
-    this.healthText.setText(`HP: ${Math.ceil(this.player.health)}/${this.player.maxHealth}`);
-    this.timeText.setText(`Time: ${Math.floor(this.survivalTime / 1000)}s`);
-    this.enemyCountText.setText(`Enemies: ${this.spawnSystem.getActiveEnemies().length}`);
+    // HP bar background
+    this.healthBar.fillStyle(0x333333, 0.5);
+    this.healthBar.fillRect(padding, barY, barWidth, barHeight);
     
-    // Update XP bar
+    // HP bar fill
+    if (healthPercent > 0) {
+      this.healthBar.fillStyle(healthPercent > 0.3 ? 0x00ff00 : 0xff0000);
+      this.healthBar.fillRect(padding, barY, barWidth * healthPercent, barHeight);
+    }
+    
+    // Update texts - minimal info
+    this.healthText.setText(`${Math.ceil(this.player.health)}`);  // Just the number
+    
+    // Time display - clean format
+    const totalSeconds = Math.floor(this.survivalTime / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    this.timeText.setText(timeStr);
+    
+    // Level display - just the number
+    this.levelText.setText(`${this.player.level}`);
+    
+    // Update XP bar - thin line at bottom of screen
     this.xpBar.clear();
-    
-    // XP bar background
-    this.xpBar.fillStyle(0x222222);
-    this.xpBar.fillRect(16, 110, 200, 16);
-    
-    // XP fill
     const xpPercent = this.player.getXPProgress();
-    this.xpBar.fillStyle(0x00ffff);
-    this.xpBar.fillRect(18, 112, 196 * xpPercent, 12);
+    const xpHeight = 3;
+    const xpY = this.scale.height - xpHeight;
     
-    // Update XP and level texts
-    this.xpText.setText(`XP: ${this.player.experience}/${this.player.experienceToNext}`);
-    this.levelText.setText(`Level ${this.player.level}`);
+    // XP fill only, no background
+    if (xpPercent > 0) {
+      this.xpBar.fillStyle(0x00ffff, 0.8);
+      this.xpBar.fillRect(0, xpY, this.scale.width * xpPercent, xpHeight);
+    }
     
-    // Update debug text with upgrade info
-    const upgradeManager = UpgradeManager.getInstance();
-    const upgrades = [
-      `DMG: x${(1 + upgradeManager.getUpgradeLevel('damage') * 0.25).toFixed(2)}`,
-      `SPD: x${(1 + upgradeManager.getUpgradeLevel('moveSpeed') * 0.1).toFixed(2)}`,
-      `FIRE: x${(1 + upgradeManager.getUpgradeLevel('fireRate') * 0.2).toFixed(2)}`,
-      `MAG: x${(1 + upgradeManager.getUpgradeLevel('xpMagnet') * 0.3).toFixed(2)}`
-    ];
-    this.debugText.setText('Upgrades: ' + upgrades.join(' | '));
-    
-    // Update balance text with proper calculations
-    const timeSeconds = this.survivalTime / 1000;
-    const enemies = this.spawnSystem.getActiveEnemies();
-    
-    // Calculate actual enemy threat (health * damage / expected kill time)
-    let enemyThreat = 0;
-    enemies.forEach(enemy => {
-      const enemyDPS = enemy.damage; // Damage per collision
-      const enemyHP = enemy.health;
-      enemyThreat += enemyHP + enemyDPS * 2; // Weight both HP and damage
-    });
-    
-    // Calculate player power more accurately
-    const baseDPS = 10; // Base weapon DPS
-    const damageMultiplier = 1 + (upgradeManager.getUpgradeLevel('damage') * 0.25);
-    const fireRateMultiplier = 1 + (upgradeManager.getUpgradeLevel('fireRate') * 0.2);
-    const projectileCount = 1 + upgradeManager.getUpgradeLevel('projectileCount');
-    const playerDPS = baseDPS * damageMultiplier * fireRateMultiplier * projectileCount;
-    
-    // Balance ratio: higher = easier for player
-    const balanceRatio = enemyThreat > 0 ? playerDPS / (enemyThreat / 10) : 2; // Normalize threat
-    
-    // More nuanced status with hysteresis to prevent flickering
-    let status = 'BALANCED';
-    if (balanceRatio > 2.0) status = 'EASY';
-    else if (balanceRatio > 1.3) status = 'GOOD';
-    else if (balanceRatio < 0.6) status = 'HARD';
-    else if (balanceRatio < 0.8) status = 'TOUGH';
-    
-    this.balanceText.setText(`Balance: ${balanceRatio.toFixed(1)} (${status}) | DPS: ${playerDPS.toFixed(0)} | Threat: ${(enemyThreat/10).toFixed(0)}`);
+    // REMOVED - Keep UI minimal
   }
 
   private isGameOver: boolean = false;
   
+  private createMobileControls(): void {
+    // Create virtual joystick
+    this.virtualJoystick = new VirtualJoystick(this);
+    this.player.setVirtualJoystick(this.virtualJoystick);
+    
+    // Create touch input manager
+    this.touchInputManager = new TouchInputManager(this);
+    
+    // Remove double tap pause - it's annoying
+    // Users should use the pause button or ESC key
+    
+    // Vibration feedback
+    if (MobileConfig.platform.vibrationEnabled) {
+      // Vibrate on level up
+      this.events.on('levelup', () => {
+        DeviceDetection.getInstance().vibrate(MobileConfig.platform.vibrationPatterns.levelUp);
+      });
+    }
+  }
+
+  private createPauseButton(): void {
+    // Minimal pause button - just two vertical lines
+    const size = 30;
+    const padding = 16;
+    this.pauseButton = this.add.container(this.scale.width - padding - size/2, padding + size/2);
+    
+    // Invisible hit area
+    const hitArea = this.add.circle(0, 0, size/2, 0x000000, 0);
+    hitArea.setInteractive({ useHandCursor: !this.isMobile });
+    
+    // Pause icon - two minimal lines
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0xffffff, 0.7);
+    graphics.fillRect(-4, -8, 3, 16);
+    graphics.fillRect(1, -8, 3, 16);
+    
+    this.pauseButton.add([hitArea, graphics]);
+    this.pauseButton.setScrollFactor(0);
+    this.pauseButton.setDepth(102);
+    this.pauseButton.setAlpha(0.5);
+    
+    // Button interactions
+    hitArea.on('pointerover', () => {
+      this.pauseButton.setAlpha(1);
+    });
+    
+    hitArea.on('pointerout', () => {
+      this.pauseButton.setAlpha(0.5);
+    });
+    
+    hitArea.on('pointerdown', () => {
+      this.pauseGame();
+    });
+    
+    // ESC key handler
+    this.input.keyboard!.on('keydown-ESC', () => {
+      this.pauseGame();
+    });
+  }
+  
+  private pauseGame(): void {
+    // Collect current stats
+    const stats = {
+      survivalTime: this.survivalTime,
+      playerLevel: this.player.level,
+      enemiesKilled: this.enemiesKilled,
+      totalXP: this.totalXP,
+      damageDealt: this.damageDealt,
+      activeEnemies: this.spawnSystem.getActiveEnemies().length
+    };
+    
+    // Launch pause scene
+    this.scene.launch('PauseScene', stats);
+    this.scene.pause();
+  }
+
   private gameOver(): void {
     if (this.isGameOver) return; // Prevent multiple game over calls
     
@@ -346,7 +442,6 @@ export class GameScene extends Scene {
       // Add the new weapon to the weapon system
       const weapon = WeaponFactory.createWeapon(upgrade.weaponType);
       this.weaponSystem.addWeapon(weapon);
-      console.log('Unlocked new weapon:', upgrade.name);
       return;
     }
     
@@ -373,7 +468,7 @@ export class GameScene extends Scene {
         break;
     }
     
-    console.log('Applied upgrade:', upgrade.name);
+    // Upgrade applied successfully
   }
   
   private healthRegenTimer?: Phaser.Time.TimerEvent;

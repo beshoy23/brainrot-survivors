@@ -5,8 +5,8 @@ import { GameConfig } from '../config/game';
 
 export class CollisionSystem {
   private spatialGrid: SpatialGrid<Enemy>;
-  private lastDamageTime: Map<string, number> = new Map();
-  private damageInterval: number = 500; // Damage every 500ms
+  private lastGlobalDamageTime: number = 0;
+  private globalDamageInterval: number = 150; // VS-style: damage every 150ms while touching
 
   constructor(worldWidth: number, worldHeight: number) {
     this.spatialGrid = new SpatialGrid(64, worldWidth, worldHeight);
@@ -29,23 +29,23 @@ export class CollisionSystem {
       GameConfig.player.hitboxRadius + maxEnemyRadius
     );
     
+    // VS-style damage: collect ALL colliding enemies, then apply damage globally
+    const collidingEnemies: Enemy[] = [];
     for (const enemy of nearbyEnemies) {
       if (this.checkCollision(player, enemy)) {
-        // Apply damage with cooldown per enemy
-        const lastDamage = this.lastDamageTime.get(enemy.id) || 0;
-        if (currentTime - lastDamage >= this.damageInterval) {
-          console.log('Collision detected! Applying', enemy.damage, 'damage');
-          player.takeDamage(enemy.damage);
-          this.lastDamageTime.set(enemy.id, currentTime);
-        }
+        collidingEnemies.push(enemy);
       }
     }
     
-    // Clean up old damage times
-    for (const [id, time] of this.lastDamageTime.entries()) {
-      if (currentTime - time > this.damageInterval * 2) {
-        this.lastDamageTime.delete(id);
+    // Apply damage from ALL touching enemies on global tick
+    if (collidingEnemies.length > 0 && currentTime - this.lastGlobalDamageTime >= this.globalDamageInterval) {
+      let totalDamage = 0;
+      for (const enemy of collidingEnemies) {
+        totalDamage += enemy.damage;
       }
+      // VS-style damage applied
+      player.takeDamage(totalDamage);
+      this.lastGlobalDamageTime = currentTime;
     }
   }
 
