@@ -1,0 +1,43 @@
+name: Alternative Deploy to GitHub Pages
+
+on:
+  workflow_dispatch: # Manual trigger only for testing
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Debug build output
+        run: |
+          echo "=== DIST FOLDER CONTENTS ==="
+          ls -la dist/
+          echo "\n=== DIST INDEX.HTML ==="
+          cat dist/index.html
+          echo "\n=== ASSETS FOLDER ==="
+          ls -la dist/assets/
+        
+      - name: Deploy with peaceiris
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
+          cname: false

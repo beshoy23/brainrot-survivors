@@ -1,0 +1,68 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: List build output
+        run: |
+          echo "Root directory contents:"
+          ls -la
+          echo "\nContents of dist folder:"
+          ls -la dist/
+          echo "\nContents of dist/assets folder:"
+          ls -la dist/assets/ || echo "No assets folder"
+          echo "\nFull contents of dist/index.html:"
+          cat dist/index.html
+          echo "\nChecking if the script tag points to the right file:"
+          grep -n "script" dist/index.html || echo "No script tags found"
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Verify upload contents
+        run: |
+          echo "About to upload these files:"
+          find dist -type f -exec echo "{}" \; -exec head -5 "{}" \; -exec echo "---" \;
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+          retention-days: 1
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

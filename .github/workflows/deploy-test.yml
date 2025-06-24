@@ -1,0 +1,81 @@
+name: Test Direct File Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Verify build output
+        run: |
+          echo "=== BUILT INDEX.HTML ==="
+          cat dist/index.html
+          echo -e "\n=== CHECKING SCRIPT TAG ==="
+          grep "script" dist/index.html
+        
+      - name: Deploy to gh-pages branch
+        run: |
+          # Configure git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # List what we're about to deploy
+          echo "=== FILES TO DEPLOY (from dist) ==="
+          ls -la dist/
+          echo "=== DIST INDEX.HTML ==="
+          cat dist/index.html
+          
+          # Create a temporary directory for clean deployment
+          mkdir -p /tmp/gh-pages-deploy
+          cp dist/index.html /tmp/gh-pages-deploy/
+          cp -r dist/assets /tmp/gh-pages-deploy/
+          
+          # Verify what we're deploying
+          echo "=== CLEAN DEPLOY DIRECTORY ==="
+          ls -la /tmp/gh-pages-deploy/
+          echo "=== CLEAN INDEX.HTML ==="
+          cat /tmp/gh-pages-deploy/index.html
+          
+          # Create a completely new orphan branch
+          git checkout --orphan gh-pages-clean
+          
+          # Remove all files from git index and working directory
+          git rm -rf . || true
+          rm -rf .* * || true
+          
+          # Copy only our built files
+          cp /tmp/gh-pages-deploy/index.html .
+          cp -r /tmp/gh-pages-deploy/assets .
+          
+          # Verify final state
+          echo "=== FINAL DEPLOYED FILES ==="
+          ls -la
+          echo "=== FINAL INDEX.HTML ==="
+          cat index.html
+          
+          # Add and commit
+          git add .
+          git status
+          git commit -m "Deploy built files $(date)"
+          
+          # Force push to gh-pages
+          git push -f origin gh-pages-clean:gh-pages
