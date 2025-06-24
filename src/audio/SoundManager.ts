@@ -3,8 +3,10 @@ import { Scene } from 'phaser';
 export class SoundManager {
   private scene: Scene;
   private enabled: boolean = true;
-  private volume: number = 0.3;
+  private volume: number = 0.4;
   private audioContext?: AudioContext;
+  private activeSounds: Set<AudioNode> = new Set();
+  private soundCooldowns: Map<string, number> = new Map();
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -20,7 +22,7 @@ export class SoundManager {
     }
   }
 
-  private playTone(frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3): void {
+  private playTone(frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3, delay: number = 0): void {
     if (!this.enabled || !this.audioContext) return;
 
     try {
@@ -30,68 +32,135 @@ export class SoundManager {
       oscillator.connect(gainNode);
       gainNode.connect(this.audioContext.destination);
       
-      oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+      const startTime = this.audioContext.currentTime + delay;
+      oscillator.frequency.setValueAtTime(frequency, startTime);
       oscillator.type = type;
       
-      gainNode.gain.setValueAtTime(volume * this.volume, this.audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(volume * this.volume, startTime + 0.005);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
       
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(this.audioContext.currentTime + duration);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+      
+      this.activeSounds.add(oscillator);
+      setTimeout(() => this.activeSounds.delete(oscillator), (delay + duration) * 1000);
     } catch (e) {
       // Ignore audio errors
     }
   }
 
   private playPickupSound(): void {
-    // Happy pickup - quick ascending notes
-    this.playTone(800, 0.08, 'square', 0.2);
-    setTimeout(() => this.playTone(1000, 0.08, 'square', 0.15), 40);
+    // Satisfying pickup - sparkly ascending chord
+    const baseFreq = 600 + Math.random() * 400; // Vary pitch slightly
+    this.playTone(baseFreq, 0.06, 'triangle', 0.25);
+    this.playTone(baseFreq * 1.25, 0.08, 'sine', 0.2, 0.02);
+    this.playTone(baseFreq * 1.5, 0.1, 'sine', 0.15, 0.04);
+    this.playTone(baseFreq * 2, 0.12, 'triangle', 0.1, 0.06);
   }
 
   private playLevelUpSound(): void {
-    // Triumphant level up - chord progression
-    this.playTone(523, 0.3, 'sine', 0.3); // C5
-    setTimeout(() => this.playTone(659, 0.3, 'sine', 0.25), 100); // E5
-    setTimeout(() => this.playTone(784, 0.4, 'sine', 0.3), 200); // G5
+    // Epic level up fanfare with harmonics
+    const notes = [261.63, 329.63, 392.00, 523.25]; // C-E-G-C chord
+    notes.forEach((freq, i) => {
+      this.playTone(freq, 0.5, 'sine', 0.3 - i * 0.05, i * 0.08);
+      this.playTone(freq * 2, 0.3, 'triangle', 0.15 - i * 0.02, i * 0.08 + 0.1);
+    });
+    
+    // Add sparkle
+    for (let i = 0; i < 6; i++) {
+      this.playTone(1000 + Math.random() * 1000, 0.05, 'square', 0.1, 0.3 + i * 0.05);
+    }
   }
 
   private playHitSound(): void {
-    // Sharp hit - quick noise burst
-    this.playTone(150, 0.05, 'sawtooth', 0.15);
+    // Punchy hit with impact
+    const impact = 80 + Math.random() * 100;
+    this.playTone(impact, 0.03, 'sawtooth', 0.25);
+    this.playTone(impact * 2, 0.02, 'square', 0.15, 0.01);
+    this.playTone(impact * 0.5, 0.08, 'triangle', 0.1, 0.02);
   }
 
   private playDeathSound(): void {
-    // Enemy death - descending tone
-    if (!this.audioContext) return;
-    try {
-      const oscillator = this.audioContext.createOscillator();
-      const gainNode = this.audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.2);
-      oscillator.type = 'triangle';
-      
-      gainNode.gain.setValueAtTime(0.2 * this.volume, this.audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
-      
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(this.audioContext.currentTime + 0.2);
-    } catch (e) {
-      // Ignore
+    // Satisfying enemy death with explosion effect
+    const baseFreq = 200 + Math.random() * 100;
+    
+    // Main death sound
+    this.playTone(baseFreq, 0.15, 'sawtooth', 0.3);
+    this.playTone(baseFreq * 0.5, 0.2, 'triangle', 0.2, 0.02);
+    
+    // Explosion crackle
+    for (let i = 0; i < 4; i++) {
+      this.playTone(100 + Math.random() * 200, 0.05, 'square', 0.15, i * 0.03);
+    }
+    
+    // Descending tail
+    if (this.audioContext) {
+      try {
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        
+        const startTime = this.audioContext.currentTime + 0.05;
+        osc.frequency.setValueAtTime(300, startTime);
+        osc.frequency.exponentialRampToValueAtTime(50, startTime + 0.25);
+        osc.type = 'triangle';
+        
+        gain.gain.setValueAtTime(0.2 * this.volume, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+        
+        osc.start(startTime);
+        osc.stop(startTime + 0.25);
+      } catch (e) {
+        // Ignore
+      }
     }
   }
 
   private playShootSound(): void {
-    // Quick shoot - brief tone
-    this.playTone(1200, 0.03, 'square', 0.1);
+    // Varied shoot sounds to prevent monotony
+    const shootTypes = ['laser', 'pop', 'zap'];
+    const type = shootTypes[Math.floor(Math.random() * shootTypes.length)];
+    
+    switch (type) {
+      case 'laser':
+        this.playTone(1200 + Math.random() * 400, 0.04, 'sawtooth', 0.12);
+        this.playTone(800 + Math.random() * 200, 0.02, 'square', 0.08, 0.01);
+        break;
+      case 'pop':
+        this.playTone(600 + Math.random() * 300, 0.03, 'triangle', 0.15);
+        this.playTone(1200 + Math.random() * 400, 0.02, 'sine', 0.1, 0.01);
+        break;
+      case 'zap':
+        this.playTone(1500 + Math.random() * 500, 0.025, 'square', 0.1);
+        this.playTone(2000 + Math.random() * 600, 0.015, 'triangle', 0.06, 0.01);
+        break;
+    }
   }
 
   play(soundKey: string, options?: { volume?: number; rate?: number }): void {
     if (!this.enabled) return;
+    
+    // Prevent audio spam with cooldowns
+    const now = Date.now();
+    const cooldownTime = this.soundCooldowns.get(soundKey) || 0;
+    
+    // Different cooldowns for different sounds
+    const cooldowns = {
+      'shoot': 25,   // Very short for rapid fire
+      'hit': 20,
+      'pickup': 50,
+      'death': 30,
+      'levelup': 500 // Longer for important sounds
+    };
+    
+    if (now - cooldownTime < (cooldowns[soundKey] || 50)) {
+      return; // Still in cooldown
+    }
+    
+    this.soundCooldowns.set(soundKey, now);
     
     // Temporarily adjust volume if specified
     const originalVolume = this.volume;
@@ -127,14 +196,11 @@ export class SoundManager {
 
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
-    this.sounds.forEach(sound => {
-      if ('setVolume' in sound) {
-        (sound as any).setVolume(this.volume);
-      }
-    });
   }
 
   destroy(): void {
+    this.activeSounds.clear();
+    this.soundCooldowns.clear();
     if (this.audioContext) {
       this.audioContext.close();
     }
