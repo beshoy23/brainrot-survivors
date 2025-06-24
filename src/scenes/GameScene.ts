@@ -315,37 +315,64 @@ export class GameScene extends Scene {
   }
 
   private createPauseButton(): void {
-    // Minimal pause button - just two vertical lines
-    const size = 30;
-    const padding = 16;
-    this.pauseButton = this.add.container(this.scale.width - padding - size/2, padding + size/2);
+    // Mobile-friendly pause button
+    const baseSize = this.isMobile ? 56 : 30; // Much larger for mobile
+    const padding = this.isMobile ? 24 : 16; // More padding on mobile
     
-    // Invisible hit area
-    const hitArea = this.add.circle(0, 0, size/2, 0x000000, 0);
+    // Position with safe area consideration for mobile
+    const safeAreaTop = this.isMobile ? 40 : 0; // Account for notches
+    const xPos = this.scale.width - padding - baseSize/2;
+    const yPos = padding + baseSize/2 + safeAreaTop;
+    
+    this.pauseButton = this.add.container(xPos, yPos);
+    
+    // Larger invisible hit area for easier tapping
+    const hitAreaSize = this.isMobile ? baseSize * 1.2 : baseSize; // 20% larger hit area on mobile
+    const hitArea = this.add.circle(0, 0, hitAreaSize/2, 0x000000, 0);
     hitArea.setInteractive({ useHandCursor: !this.isMobile });
     
-    // Pause icon - two minimal lines
+    // Background circle for better visibility on mobile
+    if (this.isMobile) {
+      const background = this.add.circle(0, 0, baseSize/2, 0x000000, 0.3);
+      background.setStrokeStyle(2, 0xffffff, 0.5);
+      this.pauseButton.add(background);
+    }
+    
+    // Pause icon - scaled appropriately
     const graphics = this.add.graphics();
-    graphics.fillStyle(0xffffff, 0.7);
-    graphics.fillRect(-4, -8, 3, 16);
-    graphics.fillRect(1, -8, 3, 16);
+    graphics.fillStyle(0xffffff, this.isMobile ? 0.9 : 0.7);
+    
+    // Scale icon with button size
+    const iconScale = baseSize / 30;
+    const lineWidth = Math.max(2, 3 * iconScale);
+    const lineHeight = Math.max(12, 16 * iconScale);
+    const lineSpacing = Math.max(4, 5 * iconScale);
+    
+    graphics.fillRect(-lineSpacing, -lineHeight/2, lineWidth, lineHeight);
+    graphics.fillRect(lineSpacing - lineWidth, -lineHeight/2, lineWidth, lineHeight);
     
     this.pauseButton.add([hitArea, graphics]);
     this.pauseButton.setScrollFactor(0);
     this.pauseButton.setDepth(102);
-    this.pauseButton.setAlpha(0.5);
+    this.pauseButton.setAlpha(this.isMobile ? 0.8 : 0.5);
     
-    // Button interactions
+    // Enhanced button interactions for mobile
     hitArea.on('pointerover', () => {
       this.pauseButton.setAlpha(1);
     });
     
     hitArea.on('pointerout', () => {
-      this.pauseButton.setAlpha(0.5);
+      this.pauseButton.setAlpha(this.isMobile ? 0.8 : 0.5);
     });
     
     hitArea.on('pointerdown', () => {
+      // Add visual feedback for tap
+      this.pauseButton.setScale(0.9);
       this.pauseGame();
+    });
+    
+    hitArea.on('pointerup', () => {
+      this.pauseButton.setScale(1);
     });
     
     // ESC key handler
