@@ -4,9 +4,9 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.BASIC]: {
     id: EnemyTypeId.BASIC,
     name: 'Basic Enemy',
-    health: 3, // Further reduced for high density
+    health: 4, // Increased from 3 for better balance
     speed: 120, // Slower for dodgeability
-    damage: 0.5, // VS-style: continuous contact damage
+    damage: 2, // VS-style: meaningful damage per hit
     size: 18, // Smaller
     color: 0xff0000, // Red
     shape: 'square',
@@ -17,9 +17,9 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.FAST]: {
     id: EnemyTypeId.FAST,
     name: 'Fast Ghost',
-    health: 2, // Very fragile for high numbers
+    health: 3, // Increased from 2 for better balance
     speed: 220, // Reduced from 280
-    damage: 0.3, // VS-style: fast but weak
+    damage: 1, // VS-style: fast but weaker damage
     size: 14, // Smaller
     color: 0x00ff00, // Green - distinct from gems
     shape: 'diamond',
@@ -30,9 +30,9 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.TANK]: {
     id: EnemyTypeId.TANK,
     name: 'Heavy Tank',
-    health: 20, // Reduced for faster kills
+    health: 35, // Increased from 20 for meaningful tank fights
     speed: 60, // Slower
-    damage: 1.5, // VS-style: strong but slow
+    damage: 5, // VS-style: dangerous contact damage
     size: 28, // Smaller
     color: 0x800000, // Dark red
     shape: 'square',
@@ -43,9 +43,9 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.SWARM]: {
     id: EnemyTypeId.SWARM,
     name: 'Swarm Bug',
-    health: 1, // One-shot kills for high density
+    health: 2, // Increased from 1 for better balance
     speed: 140, // Reduced speed
-    damage: 0.2, // VS-style: swarm damage
+    damage: 1, // VS-style: meaningful swarm damage
     size: 12, // Small but visible
     color: 0xffaa00, // Orange
     shape: 'circle',
@@ -57,9 +57,9 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.ELITE]: {
     id: EnemyTypeId.ELITE,
     name: 'Elite Boss',
-    health: 60, // Reduced for faster boss fights
+    health: 120, // Doubled from 60 for real boss fights
     speed: 100, // Slower
-    damage: 2.5, // VS-style: boss damage
+    damage: 8, // VS-style: boss-level threat
     size: 40, // Smaller
     color: 0x4b0082, // Indigo
     shape: 'diamond',

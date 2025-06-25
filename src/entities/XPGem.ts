@@ -184,6 +184,16 @@ export class XPGem {
     this.sprite.setScale(1);
   }
 
+  // Method to reset magnetic state (for fixing tab switch bugs)
+  resetMagneticState(): void {
+    this.isMagnetic = false;
+    this.hasBeenTriggered = false;
+    this.pushPhase = false;
+    this.pushStartTime = 0;
+    this.velocity.set(0, 0);
+    this.sprite.setScale(1);
+  }
+
   collect(): void {
     this.isBeingCollected = true;
     // VS-style: gem zips to player instantly with scale effect

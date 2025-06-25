@@ -63,14 +63,24 @@ export class PickupSystem {
     nearbyGems.forEach(gem => {
       if (!gem.sprite.active) return;
       
-      // Update gem movement and magnetism
-      gem.update(deltaTime, playerX, playerY, magnetRange, playerSpeed);
-      
-      // Check collection
+      // Check actual distance to player (spatial grid returns cells, not exact distance)
       const dx = playerX - gem.x;
       const dy = playerY - gem.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
+      // Fix for tab switch bug: Reset magnetic state for gems that are too far
+      if (distance > magnetRange && gem.isMagnetic) {
+        gem.resetMagneticState();
+      }
+      
+      // Only update with magnetism if actually within range
+      if (distance <= magnetRange) {
+        gem.update(deltaTime, playerX, playerY, magnetRange, playerSpeed);
+      } else {
+        gem.update(deltaTime, playerX, playerY, 0, playerSpeed); // No magnetism
+      }
+      
+      // Check collection
       if (distance < collectRadius) {
         gem.collect(); // Mark as being collected
         xpCollected += gem.value;
@@ -85,6 +95,10 @@ export class PickupSystem {
     // Update non-nearby gems (just floating animation)
     this.activeGems.forEach(gem => {
       if (!nearbyGems.includes(gem) && gem.sprite.active) {
+        // Fix for tab switch bug: Reset magnetic state for gems that are definitely far
+        if (gem.isMagnetic) {
+          gem.resetMagneticState();
+        }
         gem.update(deltaTime, playerX, playerY, 0, playerSpeed); // 0 range = no magnetism
       }
     });

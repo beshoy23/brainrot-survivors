@@ -44,7 +44,7 @@ export class WeaponFactory {
         
       case WeaponType.AXE:
         return new Weapon({
-          damage: baseConfig.damage * 2, // High damage
+          damage: 35, // Fixed damage for better balance (was baseConfig.damage * 2)
           fireRate: 1, // Slower fire rate
           projectileSpeed: 300,
           range: 200,
@@ -53,7 +53,7 @@ export class WeaponFactory {
         
       case WeaponType.GARLIC:
         return new Weapon({
-          damage: baseConfig.damage * 0.5, // Low damage but constant
+          damage: 18, // Increased for better area damage (was baseConfig.damage * 0.5)
           fireRate: 2, // Ticks twice per second
           projectileSpeed: 50, // Very slow moving for stationary effect
           range: 20, // Short range for area effect
@@ -62,7 +62,7 @@ export class WeaponFactory {
         
       case WeaponType.WHIP:
         return new Weapon({
-          damage: baseConfig.damage * 1.5, // Medium-high damage
+          damage: 28, // Balanced damage (was baseConfig.damage * 1.5)
           fireRate: 1.5, // Medium fire rate
           projectileSpeed: 800, // Very fast for "instant" feel
           range: 150,

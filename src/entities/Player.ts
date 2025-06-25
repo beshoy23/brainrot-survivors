@@ -61,10 +61,10 @@ export class Player {
       this.updateAfterimage();
     }
     
-    // Keep player within bounds (with some margin)
-    const margin = 50;
-    const worldWidth = this.sprite.scene.scale.width * 2;
-    const worldHeight = this.sprite.scene.scale.height * 2;
+    // Keep player within the larger world bounds (with some margin)
+    const margin = 100;
+    const worldWidth = this.sprite.scene.scale.width * 8;
+    const worldHeight = this.sprite.scene.scale.height * 8;
     
     // Clamp position to world bounds
     this.sprite.x = Phaser.Math.Clamp(this.sprite.x, margin, worldWidth - margin);
@@ -107,12 +107,13 @@ export class Player {
   }
 
   takeDamage(amount: number): void {
-    // Apply armor upgrade
+    // Apply flat armor reduction (VS-style)
     const upgradeManager = (window as any).upgradeManager;
-    const damageReduction = upgradeManager ? 
-      (1 - (upgradeManager.getUpgradeLevel('armor') * 0.1)) : 1;
+    const flatArmor = upgradeManager ? 
+      (upgradeManager.getUpgradeLevel('armor') * 2) : 0;
     
-    const actualDamage = Math.floor(amount * damageReduction);
+    // Flat damage reduction with minimum 1 damage
+    const actualDamage = Math.max(1, Math.floor(amount - flatArmor));
     
     this.health -= actualDamage;
     this.lastDamageTime = Date.now();

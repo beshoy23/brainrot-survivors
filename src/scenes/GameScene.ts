@@ -29,6 +29,7 @@ export class GameScene extends Scene {
   private xpText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
   private survivalTime: number = 0;
+  private accumulatedTime: number = 0; // For timing-based systems
   private timeText!: Phaser.GameObjects.Text;
   private enemyCountText!: Phaser.GameObjects.Text;
   private debugText!: Phaser.GameObjects.Text;
@@ -64,33 +65,19 @@ export class GameScene extends Scene {
     this.isMobile = (window as any).isMobile || false;
     this.uiScale = this.isMobile ? getMobileUIScale() : 1;
     
-    // Add a background so we can see the game area
-    this.add.rectangle(0, 0, this.scale.width * 2, this.scale.height * 2, 0x1a1a1a)
-      .setOrigin(0, 0);
+    // Create a much larger, more interesting world (8x screen size)
+    const worldWidth = this.scale.width * 8;
+    const worldHeight = this.scale.height * 8;
     
-    // Add grid pattern for visual reference
-    const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x333333, 0.5);
+    this.createInterestingBackground(worldWidth, worldHeight);
     
-    // Draw grid
-    const gridSize = 64;
-    for (let x = 0; x < this.scale.width * 2; x += gridSize) {
-      graphics.moveTo(x, 0);
-      graphics.lineTo(x, this.scale.height * 2);
-    }
-    for (let y = 0; y < this.scale.height * 2; y += gridSize) {
-      graphics.moveTo(0, y);
-      graphics.lineTo(this.scale.width * 2, y);
-    }
-    graphics.strokePath();
+    // Initialize player at center of the larger world
+    this.player = new Player(this, worldWidth / 2, worldHeight / 2);
     
-    // Initialize player at center
-    this.player = new Player(this, this.scale.width / 2, this.scale.height / 2);
-    
-    // Initialize systems
+    // Initialize systems with larger world
     this.movementSystem = new MovementSystem();
     this.spawnSystem = new SpawnSystem(this);
-    this.collisionSystem = new CollisionSystem(this.scale.width * 2, this.scale.height * 2);
+    this.collisionSystem = new CollisionSystem(worldWidth, worldHeight);
     this.weaponSystem = new WeaponSystem(this);
     this.pickupSystem = new PickupSystem(this);
     
@@ -111,20 +98,20 @@ export class GameScene extends Scene {
       this.damageDealt += damage; // Track total damage
     };
     
-    // Set up camera to follow player
+    // Set up camera to follow player in the larger world
     this.cameras.main.startFollow(this.player.sprite, true, 
       GameConfig.camera.smoothFactor, 
       GameConfig.camera.smoothFactor
     );
     this.cameras.main.setDeadzone(50, 50);
     
-    // Set camera bounds with margin to keep player visible
-    const margin = 100; // Keep player at least 100px from edge
+    // Set camera bounds for the much larger world
+    const margin = 200; // Larger margin for the bigger world
     this.cameras.main.setBounds(
       -margin, 
       -margin, 
-      this.scale.width * 2 + margin * 2, 
-      this.scale.height * 2 + margin * 2
+      worldWidth + margin * 2, 
+      worldHeight + margin * 2
     );
     
     // Create UI (but not pause button yet)
@@ -140,6 +127,7 @@ export class GameScene extends Scene {
     
     // Reset survival time
     this.survivalTime = 0;
+    this.accumulatedTime = 0;
     
     // Set up scene resume handler to restore button functionality
     this.events.on('resume', () => {
@@ -153,6 +141,100 @@ export class GameScene extends Scene {
     // Game scene initialization complete
   }
 
+  private createInterestingBackground(worldWidth: number, worldHeight: number): void {
+    // Create a more interesting, varied background inspired by VS
+    
+    // Base background - lighter gray for visibility
+    const bg = this.add.rectangle(0, 0, worldWidth, worldHeight, 0x3a3a3a);
+    bg.setOrigin(0, 0);
+    bg.setDepth(-20); // Ensure it's behind everything
+    
+    // Create multiple background layers for depth
+    this.createBackgroundTerrain(worldWidth, worldHeight);
+    this.createBackgroundGrid(worldWidth, worldHeight);
+    this.createBackgroundDetails(worldWidth, worldHeight);
+  }
+  
+  private createBackgroundTerrain(worldWidth: number, worldHeight: number): void {
+    // Create more visible terrain variations
+    const graphics = this.add.graphics();
+    graphics.setDepth(-10);
+    
+    // Generate organic-looking ground patches with better visibility
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight;
+      const size = 60 + Math.random() * 150;
+      
+      // Much lighter and more visible colors
+      const colors = [0x5a5a5a, 0x656565, 0x707070, 0x6d6d6d];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      graphics.fillStyle(color, 0.8 + Math.random() * 0.2); // Very high opacity
+      graphics.fillCircle(x, y, size);
+    }
+  }
+  
+  private createBackgroundGrid(worldWidth: number, worldHeight: number): void {
+    // More visible grid pattern for spatial reference
+    const graphics = this.add.graphics();
+    graphics.setDepth(-8);
+    graphics.lineStyle(2, 0x808080, 0.6); // Much brighter and more visible
+    
+    const gridSize = 128; // Larger grid for bigger world
+    
+    // Vertical lines
+    for (let x = 0; x < worldWidth; x += gridSize) {
+      graphics.moveTo(x, 0);
+      graphics.lineTo(x, worldHeight);
+    }
+    
+    // Horizontal lines  
+    for (let y = 0; y < worldHeight; y += gridSize) {
+      graphics.moveTo(0, y);
+      graphics.lineTo(worldWidth, y);
+    }
+    
+    graphics.strokePath();
+  }
+  
+  private createBackgroundDetails(worldWidth: number, worldHeight: number): void {
+    // Add more visible scattered decorative elements
+    for (let i = 0; i < 150; i++) {
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight;
+      
+      // Random decorative elements with better visibility
+      const type = Math.floor(Math.random() * 3);
+      const graphics = this.add.graphics();
+      graphics.setPosition(x, y);
+      graphics.setDepth(-5);
+      graphics.setAlpha(0.7 + Math.random() * 0.3); // Much higher visibility
+      
+      switch(type) {
+        case 0: // Bigger, more visible rocks
+          graphics.fillStyle(0x999999);
+          graphics.fillCircle(0, 0, 3 + Math.random() * 6);
+          break;
+          
+        case 1: // More visible debris crosses
+          graphics.lineStyle(3, 0x888888);
+          graphics.beginPath();
+          graphics.moveTo(-4, 0);
+          graphics.lineTo(4, 0);
+          graphics.moveTo(0, -4);
+          graphics.lineTo(0, 4);
+          graphics.strokePath();
+          break;
+          
+        case 2: // Bigger patches
+          graphics.fillStyle(0xaaaaaa);
+          graphics.fillRect(-3, -2, 6, 4);
+          break;
+      }
+    }
+  }
+
   update(time: number, delta: number): void {
     // Stop all updates if game is over
     if (this.isGameOver) return;
@@ -162,16 +244,17 @@ export class GameScene extends Scene {
       return;
     }
     
-    // Update survival time
+    // Update survival time and accumulated time
     this.survivalTime += delta;
+    this.accumulatedTime += delta;
     this.updateUI();
     
     // Update systems
     const enemies = this.spawnSystem.getActiveEnemies();
     this.movementSystem.update(delta, this.player, enemies);
-    this.spawnSystem.update(time, this.player.getPosition());
-    this.collisionSystem.update(time, this.player, enemies);
-    this.weaponSystem.update(delta, time, this.player, enemies);
+    this.spawnSystem.update(this.survivalTime, this.player.getPosition());
+    this.collisionSystem.update(this.accumulatedTime, this.player, enemies);
+    this.weaponSystem.update(delta, this.accumulatedTime, this.player, enemies);
     
     // Update pickups and check for level up
     const xpCollected = this.pickupSystem.update(delta, this.player);
@@ -549,8 +632,8 @@ export class GameScene extends Scene {
     
     switch(upgrade.id) {
       case 'maxHealth':
-        // Increase max health and heal the difference
-        const healthBonus = upgradeManager.getUpgradeLevel('maxHealth') * 20;
+        // Increase max health and heal the difference (VS-style)
+        const healthBonus = upgradeManager.getUpgradeLevel('maxHealth') * 25;
         const oldMax = this.player.maxHealth;
         this.player.maxHealth = GameConfig.player.maxHealth + healthBonus;
         this.player.health += (this.player.maxHealth - oldMax);

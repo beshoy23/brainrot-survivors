@@ -13,19 +13,19 @@ export const UPGRADES: Record<string, UpgradeDefinition> = {
   damage: {
     id: 'damage',
     name: 'Damage Up',
-    description: '+25% weapon damage',
+    description: '+15% weapon damage',
     maxLevel: 10,
-    effect: (level) => ({ damageMultiplier: 1 + (level * 0.25) }),
-    getValue: (level) => 1 + (level * 0.25),
+    effect: (level) => ({ damageMultiplier: 1 + (level * 0.15) }),
+    getValue: (level) => 1 + (level * 0.15),
     category: 'weapon'
   },
   fireRate: {
     id: 'fireRate', 
     name: 'Fire Rate',
-    description: '+20% attack speed',
+    description: '+15% attack speed',
     maxLevel: 5,
-    effect: (level) => ({ fireRateMultiplier: 1 + (level * 0.2) }),
-    getValue: (level) => 1 + (level * 0.2),
+    effect: (level) => ({ fireRateMultiplier: 1 + (level * 0.15) }),
+    getValue: (level) => 1 + (level * 0.15),
     category: 'weapon'
   },
   projectileCount: {
@@ -51,19 +51,19 @@ export const UPGRADES: Record<string, UpgradeDefinition> = {
   maxHealth: {
     id: 'maxHealth',
     name: 'Health Up',
-    description: '+20 max health',
+    description: '+25 max health',
     maxLevel: 10,
-    effect: (level) => ({ additionalHealth: level * 20 }),
-    getValue: (level) => level * 20,
+    effect: (level) => ({ additionalHealth: level * 25 }),
+    getValue: (level) => level * 25,
     category: 'player'
   },
   healthRegen: {
     id: 'healthRegen',
     name: 'Regeneration',
-    description: '+1 HP per 5 seconds',
+    description: '+1 HP per 3 seconds',
     maxLevel: 5,
-    effect: (level) => ({ regenPerSecond: level / 5 }),
-    getValue: (level) => level / 5,
+    effect: (level) => ({ regenPerSecond: level / 3 }),
+    getValue: (level) => level / 3,
     category: 'player'
   },
   
@@ -89,10 +89,10 @@ export const UPGRADES: Record<string, UpgradeDefinition> = {
   armor: {
     id: 'armor',
     name: 'Armor',
-    description: '-10% damage taken',
+    description: '-2 flat damage reduction',
     maxLevel: 5,
-    effect: (level) => ({ damageReduction: 1 - (level * 0.1) }),
-    getValue: (level) => 1 - (level * 0.1),
+    effect: (level) => ({ flatDamageReduction: level * 2 }),
+    getValue: (level) => level * 2,
     category: 'passive'
   }
 };

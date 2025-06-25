@@ -143,7 +143,10 @@ export class SpawnSystem {
     const x = playerPos.x + Math.cos(angle) * distance;
     const y = playerPos.y + Math.sin(angle) * distance;
     
-    enemy.spawn(x, y, enemyType);
+    // Apply progressive health scaling based on survival time
+    const scaledEnemyType = this.applyHealthScaling(enemyType);
+    
+    enemy.spawn(x, y, scaledEnemyType);
   }
   
   private spawnSwarmGroup(playerPos: Vector2, enemyType: any): void {
@@ -192,11 +195,32 @@ export class SpawnSystem {
       const finalX = startX + offsetX;
       const finalY = startY + offsetY;
       
-      enemy.spawn(finalX, finalY, enemyType, angle);
+      // Apply progressive health scaling for swarm enemies too
+      const scaledEnemyType = this.applyHealthScaling(enemyType);
+      enemy.spawn(finalX, finalY, scaledEnemyType, angle);
       // All swarm members move in the same direction
     }
     
     // VS-style swarm spawned successfully
+  }
+  
+  private applyHealthScaling(enemyType: any): any {
+    const survivalTimeSeconds = this.survivalTime / 1000;
+    
+    // Progressive health scaling: +10% health every 30 seconds, caps at +100% after 5 minutes
+    const healthScaleIntervals = Math.floor(survivalTimeSeconds / 30); // Every 30 seconds
+    const healthMultiplier = 1 + Math.min(healthScaleIntervals * 0.1, 1.0); // Cap at +100%
+    
+    // VS-style damage scaling: +1 flat damage every 2 minutes, caps at +10 after 20 minutes
+    const damageScaleIntervals = Math.floor(survivalTimeSeconds / 120); // Every 2 minutes
+    const damageBonus = Math.min(damageScaleIntervals, 10); // Cap at +10 damage
+    
+    // Create a copy of the enemy type with scaled stats
+    const scaledType = { ...enemyType };
+    scaledType.health = Math.ceil(enemyType.health * healthMultiplier);
+    scaledType.damage = enemyType.damage + damageBonus;
+    
+    return scaledType;
   }
   
   private spawnElite(playerPos: Vector2): void {

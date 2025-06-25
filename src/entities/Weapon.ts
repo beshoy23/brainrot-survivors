@@ -28,7 +28,7 @@ export class Weapon {
     // Apply fire rate multiplier from upgrades
     const upgradeManager = (window as any).upgradeManager;
     const fireRateMultiplier = upgradeManager ? 
-      (1 + (upgradeManager.getUpgradeLevel('fireRate') * 0.2)) : 1;
+      (1 + (upgradeManager.getUpgradeLevel('fireRate') * 0.15)) : 1;
     
     const actualFireRate = this.fireRate * fireRateMultiplier;
     const fireInterval = 1000 / actualFireRate;
@@ -43,7 +43,7 @@ export class Weapon {
     // Apply damage multiplier from upgrades
     const upgradeManager = (window as any).upgradeManager;
     const damageMultiplier = upgradeManager ? 
-      (1 + (upgradeManager.getUpgradeLevel('damage') * 0.25)) : 1;
+      (1 + (upgradeManager.getUpgradeLevel('damage') * 0.15)) : 1;
     
     return this.damage * damageMultiplier;
   }

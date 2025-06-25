@@ -1,7 +1,7 @@
 export const GameConfig = {
   player: {
     speed: 200,
-    maxHealth: 100,
+    maxHealth: 120, // VS-style: slightly higher base health
     hitboxRadius: 14
   },
   enemies: {
@@ -37,7 +37,7 @@ export const GameConfig = {
   },
   weapons: {
     basic: {
-      damage: 25,
+      damage: 20, // Reduced from 25 for better balance
       fireRate: 2, // 2 shots per second
       projectileSpeed: 500,
       range: 300
