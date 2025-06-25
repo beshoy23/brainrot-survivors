@@ -30,7 +30,7 @@ export class Player {
   constructor(scene: Scene, x: number, y: number) {
     // Create player as animated sprite
     this.sprite = scene.add.sprite(x, y, 'warrior-idle', 0);
-    this.sprite.setScale(0.25); // Scale down from 192x192 to ~48x48
+    this.sprite.setScale(0.4); // Scale down from 192x192 to ~77x77 (larger than zombies)
     this.sprite.setDepth(GameConfig.player.depth);
     
     // Create animations

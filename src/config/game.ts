@@ -2,7 +2,8 @@ export const GameConfig = {
   player: {
     speed: 200,
     maxHealth: 120, // VS-style: slightly higher base health
-    hitboxRadius: 14
+    hitboxRadius: 14,
+    depth: 10 // Player appears above enemies (8) and weapon effects (4-6)
   },
   enemies: {
     basic: {

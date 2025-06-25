@@ -76,29 +76,35 @@ export class WeaponSystem {
       } else {
         // Check collision with enemies
         enemies.forEach(enemy => {
-          if (!enemy.sprite.active) return;
+          if (!enemy.sprite.active || enemy.isDying) return;
           
           const dx = projectile.x - enemy.x;
           const dy = projectile.y - enemy.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           
           if (distance < 15) { // Hit radius
+            const wasDying = enemy.isDying;
             const isDead = enemy.takeDamage(projectile.damage);
             
-            // VS-style damage number popup
-            this.createDamageNumber(enemy.x, enemy.y, projectile.damage);
-            
-            // Track damage dealt
-            if (this.onDamageDealt) {
-              this.onDamageDealt(projectile.damage);
+            // Only create damage number and callbacks if enemy wasn't already dying
+            if (!wasDying) {
+              // VS-style damage number popup
+              this.createDamageNumber(enemy.x, enemy.y, projectile.damage);
+              
+              // Track damage dealt
+              if (this.onDamageDealt) {
+                this.onDamageDealt(projectile.damage);
+              }
+              
+              if (isDead) {
+                // Enemy died - notify callback (only once)
+                if (this.onEnemyDeath) {
+                  this.onEnemyDeath(enemy.x, enemy.y);
+                }
+              }
             }
             
-            if (isDead) {
-              // Enemy died - notify callback
-              if (this.onEnemyDeath) {
-                this.onEnemyDeath(enemy.x, enemy.y);
-              }
-            } else {
+            if (!isDead) {
               // Flash red on hit (Graphics objects use fillStyle, not tint)
               if (enemy.sprite instanceof Phaser.GameObjects.Graphics) {
                 // Redraw with tint effect

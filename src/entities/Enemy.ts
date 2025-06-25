@@ -19,6 +19,7 @@ export class Enemy {
   public movementType: 'homing' | 'straight'; // VS-style: swarm moves straight, others home
   public movementAngle: number; // For straight-line movement
   public spawnTime: number; // Track when spawned for despawning
+  public isDying: boolean = false; // Track if enemy is playing death animation
   
   private scene: Scene;
   
@@ -48,10 +49,10 @@ export class Enemy {
   
   constructor(scene: Scene) {
     this.scene = scene;
-    this.sprite = scene.add.sprite(0, 0, 'red-warrior-idle', 0);
+    this.sprite = scene.add.sprite(0, 0, 'zombie-male-idle', 0);
     this.sprite.setVisible(false);
     this.sprite.setActive(false);
-    this.sprite.setScale(0.15); // Scale down from 192px to ~29px
+    this.sprite.setScale(0.8); // Scale down slightly from 64px
     
     // Default to basic enemy
     this.enemyType = ENEMY_TYPES.basic;
@@ -194,48 +195,49 @@ export class Enemy {
   }
   
   private setupEnemySprite(): void {
-    // Set sprite texture based on enemy type
+    // Set sprite texture based on enemy type - mix of zombies and medieval warriors
     let idleTexture: string;
     
     switch (this.enemyType.id) {
       case 'basic':
-        idleTexture = 'red-warrior-idle';
+        idleTexture = 'zombie-male-idle';     // Male zombie for basic
         break;
       case 'fast':
-        idleTexture = 'red-archer-idle';
+        idleTexture = 'zombie-female-idle';   // Female zombie for fast
         break;
       case 'tank':
-        idleTexture = 'red-lancer-idle';
+        idleTexture = 'black-warrior-idle';   // Black warrior for tank (armored)
         break;
       case 'elite':
-        idleTexture = 'black-warrior-idle';
+        idleTexture = 'red-lancer-idle';      // Red lancer for elite (imposing)
         break;
       case 'swarm':
-        idleTexture = 'yellow-monk-idle';
+        idleTexture = 'yellow-monk-idle';     // Yellow monk for swarm (agile)
         break;
       default:
-        idleTexture = 'red-warrior-idle';
+        idleTexture = 'zombie-male-idle';
     }
     
     this.sprite.setTexture(idleTexture, 0);
     this.createEnemyAnimations();
+    this.applyEnemyTinting();
   }
   
   private getBaseScale(): number {
-    // Different base scales for different enemy types
+    // Different base scales for different enemy sprites
     switch (this.enemyType.id) {
       case 'basic':
-        return 0.15; // Red warrior: 192px -> ~29px
+        return 0.8;  // Male zombie: normal size (53×64)
       case 'fast':
-        return 0.12; // Red archer: smaller/faster
+        return 0.7;  // Female zombie: smaller/faster (58×64)
       case 'tank':
-        return 0.12; // Red lancer: 320px -> ~38px 
+        return 0.4;  // Black warrior: large but scaled down (192×192)
       case 'elite':
-        return 0.18; // Black warrior: larger/imposing
+        return 0.25; // Red lancer: very large sprite, scale way down (320×320)
       case 'swarm':
-        return 0.1;  // Yellow monk: smallest
+        return 0.3;  // Yellow monk: medium sprite, scale down (192×192)
       default:
-        return 0.15;
+        return 0.8;
     }
   }
   
@@ -243,91 +245,129 @@ export class Enemy {
     const scene = this.scene;
     const enemyId = this.enemyType.id;
     
-    // Create idle animation for this enemy type
-    const idleKey = `${enemyId}-idle-anim`;
-    const runKey = `${enemyId}-run-anim`;
+    // Determine sprite type and configurations
+    const spriteConfig = this.getSpriteConfig();
     
-    if (!scene.anims.exists(idleKey)) {
-      let spriteKey: string;
-      let frameCount: number;
+    // Create animations for this enemy type
+    const animations = ['idle', 'walk'];
+    
+    animations.forEach(anim => {
+      const animKey = `${enemyId}-${anim}-anim`;
       
-      switch (enemyId) {
-        case 'basic':
-          spriteKey = 'red-warrior-idle';
-          frameCount = 7; // 8 frames (0-7)
-          break;
-        case 'fast':
-          spriteKey = 'red-archer-idle';
-          frameCount = 5; // 6 frames (0-5)
-          break;
-        case 'tank':
-          spriteKey = 'red-lancer-idle';
-          frameCount = 11; // 12 frames (0-11)
-          break;
-        case 'elite':
-          spriteKey = 'black-warrior-idle';
-          frameCount = 7; // 8 frames (0-7)
-          break;
-        case 'swarm':
-          spriteKey = 'yellow-monk-idle';
-          frameCount = 7; // 8 frames (0-7)
-          break;
-        default:
-          spriteKey = 'red-warrior-idle';
-          frameCount = 7;
+      if (!scene.anims.exists(animKey)) {
+        let spriteKey: string;
+        let frameCount: number;
+        let frameRate: number;
+        
+        if (anim === 'idle') {
+          spriteKey = spriteConfig.idleTexture;
+          frameCount = spriteConfig.idleFrames - 1; // Convert to 0-based
+          frameRate = spriteConfig.idleFrameRate;
+        } else { // walk
+          spriteKey = spriteConfig.walkTexture;
+          frameCount = spriteConfig.walkFrames - 1; // Convert to 0-based
+          frameRate = spriteConfig.walkFrameRate;
+        }
+        
+        scene.anims.create({
+          key: animKey,
+          frames: scene.anims.generateFrameNumbers(spriteKey, { 
+            start: 0, 
+            end: frameCount 
+          }),
+          frameRate: frameRate,
+          repeat: -1 // All animations loop
+        });
       }
-      
-      scene.anims.create({
-        key: idleKey,
-        frames: scene.anims.generateFrameNumbers(spriteKey, { 
-          start: 0, 
-          end: frameCount 
-        }),
-        frameRate: 6,
-        repeat: -1
-      });
+    });
+  }
+  
+  private getSpriteConfig() {
+    // Return sprite configuration based on enemy type
+    switch (this.enemyType.id) {
+      case 'basic':
+        return {
+          idleTexture: 'zombie-male-idle',
+          walkTexture: 'zombie-male-walk',
+          idleFrames: 15,
+          walkFrames: 10,
+          idleFrameRate: 4,
+          walkFrameRate: 8
+        };
+      case 'fast':
+        return {
+          idleTexture: 'zombie-female-idle',
+          walkTexture: 'zombie-female-walk',
+          idleFrames: 15,
+          walkFrames: 10,
+          idleFrameRate: 4,
+          walkFrameRate: 8
+        };
+      case 'tank':
+        return {
+          idleTexture: 'black-warrior-idle',
+          walkTexture: 'black-warrior-run',
+          idleFrames: 8,
+          walkFrames: 8,
+          idleFrameRate: 3,
+          walkFrameRate: 6
+        };
+      case 'elite':
+        return {
+          idleTexture: 'red-lancer-idle',
+          walkTexture: 'red-lancer-run',
+          idleFrames: 12,
+          walkFrames: 12,
+          idleFrameRate: 3,
+          walkFrameRate: 8
+        };
+      case 'swarm':
+        return {
+          idleTexture: 'yellow-monk-idle',
+          walkTexture: 'yellow-monk-run',
+          idleFrames: 6,
+          walkFrames: 6,
+          idleFrameRate: 4,
+          walkFrameRate: 10
+        };
+      default:
+        return {
+          idleTexture: 'zombie-male-idle',
+          walkTexture: 'zombie-male-walk',
+          idleFrames: 15,
+          walkFrames: 10,
+          idleFrameRate: 4,
+          walkFrameRate: 8
+        };
     }
-    
-    // Create run animation (simplified - using idle for now)
-    if (!scene.anims.exists(runKey)) {
-      let runSpriteKey: string;
-      let runFrameCount: number;
-      
-      switch (enemyId) {
-        case 'basic':
-          runSpriteKey = 'red-warrior-run';
-          runFrameCount = 7;
-          break;
-        case 'fast':
-          runSpriteKey = 'red-archer-run';
-          runFrameCount = 5;
-          break;
-        case 'tank':
-          runSpriteKey = 'red-lancer-run';
-          runFrameCount = 11;
-          break;
-        case 'elite':
-          runSpriteKey = 'black-warrior-run';
-          runFrameCount = 7;
-          break;
-        case 'swarm':
-          runSpriteKey = 'yellow-monk-run';
-          runFrameCount = 7;
-          break;
-        default:
-          runSpriteKey = 'red-warrior-run';
-          runFrameCount = 7;
-      }
-      
-      scene.anims.create({
-        key: runKey,
-        frames: scene.anims.generateFrameNumbers(runSpriteKey, { 
-          start: 0, 
-          end: runFrameCount 
-        }),
-        frameRate: 10,
-        repeat: -1
-      });
+  }
+  
+  private applyEnemyTinting(): void {
+    // Apply subtle color tints to enhance visual distinction
+    switch (this.enemyType.id) {
+      case 'basic':
+        // Basic zombies: slight red tint
+        this.sprite.setTint(0xffdddd);
+        break;
+      case 'fast':
+        // Fast zombies: cyan tint (avoid gem color confusion)
+        this.sprite.setTint(0xddffff);
+        break;
+      case 'tank':
+        // Tank warriors: darker to emphasize armor
+        this.sprite.setTint(0x999999);
+        break;
+      case 'elite':
+        // Elite lancers: purple tint for elite status
+        this.sprite.setTint(0xffddff);
+        break;
+      case 'swarm':
+        // Swarm monks: light yellow for visibility
+        this.sprite.setTint(0xffffdd);
+        break;
+      default:
+        // No tint for default
+        this.sprite.clearTint();
     }
   }
   
@@ -339,7 +379,7 @@ export class Enemy {
   // Removed graphics drawing methods - now using animated sprites
 
   update(deltaTime: number, playerPos: Vector2): void {
-    if (!this.sprite.active) return;
+    if (!this.sprite.active || this.isDying) return;
     
     // VS-style: Swarm enemies despawn after 10 seconds if they haven't died
     if (this.movementType === 'straight' && Date.now() - this.spawnTime > 10000) {
@@ -400,14 +440,14 @@ export class Enemy {
       this.sprite.setFlipX(true);  // Face left
     }
     
-    // Play running animation when moving, idle when stopped
+    // Play walk animation when moving, idle when stopped
     const isMoving = moveX !== 0 || moveY !== 0;
     const currentAnim = this.sprite.anims.currentAnim?.key;
     const idleKey = `${this.enemyType.id}-idle-anim`;
-    const runKey = `${this.enemyType.id}-run-anim`;
+    const walkKey = `${this.enemyType.id}-walk-anim`;
     
-    if (isMoving && currentAnim !== runKey) {
-      this.sprite.play(runKey);
+    if (isMoving && currentAnim !== walkKey) {
+      this.sprite.play(walkKey);
     } else if (!isMoving && currentAnim !== idleKey) {
       this.sprite.play(idleKey);
     }
@@ -415,8 +455,71 @@ export class Enemy {
 
 
   takeDamage(amount: number): boolean {
+    if (this.isDying) return true; // Already dying, don't take more damage
+    
     this.health -= amount;
-    return this.health <= 0;
+    const isDeath = this.health <= 0;
+    
+    if (isDeath) {
+      this.isDying = true;
+      this.playDeathAnimation();
+    }
+    
+    return isDeath;
+  }
+  
+  private playDeathAnimation(): void {
+    // Stop movement during death
+    this.velocity.set(0, 0);
+    
+    // Only zombies have death animations
+    if (this.enemyType.id === 'basic' || this.enemyType.id === 'fast') {
+      const deathKey = `${this.enemyType.id}-dead-anim`;
+      console.log(`Playing death animation: ${deathKey}`);
+      
+      // Create death animation if it doesn't exist
+      this.createDeathAnimation();
+      
+      // Switch to death texture and play animation
+      const spriteConfig = this.getSpriteConfig();
+      const deathTexture = spriteConfig.idleTexture.replace('-idle', '-dead');
+      console.log(`Setting death texture: ${deathTexture}`);
+      
+      this.sprite.setTexture(deathTexture, 0);
+      this.sprite.play(deathKey);
+      
+      // Reset after death animation
+      this.scene.time.delayedCall(1500, () => {
+        this.reset();
+      });
+    } else {
+      // Medieval warriors just fade out quickly
+      this.sprite.setAlpha(0.7);
+      this.scene.time.delayedCall(500, () => {
+        this.reset();
+      });
+    }
+  }
+  
+  private createDeathAnimation(): void {
+    const scene = this.scene;
+    const enemyId = this.enemyType.id;
+    const deathKey = `${enemyId}-dead-anim`;
+    
+    if (!scene.anims.exists(deathKey) && (enemyId === 'basic' || enemyId === 'fast')) {
+      const spriteConfig = this.getSpriteConfig();
+      const deathTexture = spriteConfig.idleTexture.replace('-idle', '-dead');
+      
+      scene.anims.create({
+        key: deathKey,
+        frames: scene.anims.generateFrameNumbers(deathTexture, { 
+          start: 0, 
+          end: 11 // 12 frames for death
+        }),
+        frameRate: 10,
+        repeat: 0 // Play once
+      });
+    }
   }
 
   reset(): void {
@@ -427,7 +530,9 @@ export class Enemy {
     this.movementType = 'homing';
     this.movementAngle = 0;
     this.spawnTime = 0;
+    this.isDying = false; // Reset death state
     this.sprite.setScale(1); // Reset scale
+    this.sprite.setAlpha(1); // Reset alpha for medieval warriors
     
     // Reset variations
     this.variations = {

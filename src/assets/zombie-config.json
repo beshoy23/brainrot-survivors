@@ -1,0 +1,62 @@
+{
+  "male": {
+    "idle": {
+      "file": "src/assets/zombie-male-idle.png",
+      "frameWidth": 53,
+      "frameHeight": 64,
+      "frameCount": 15,
+      "animation": "idle"
+    },
+    "walk": {
+      "file": "src/assets/zombie-male-walk.png",
+      "frameWidth": 53,
+      "frameHeight": 64,
+      "frameCount": 10,
+      "animation": "walk"
+    },
+    "attack": {
+      "file": "src/assets/zombie-male-attack.png",
+      "frameWidth": 53,
+      "frameHeight": 64,
+      "frameCount": 8,
+      "animation": "attack"
+    },
+    "dead": {
+      "file": "src/assets/zombie-male-dead.png",
+      "frameWidth": 64,
+      "frameHeight": 54,
+      "frameCount": 12,
+      "animation": "dead"
+    }
+  },
+  "female": {
+    "idle": {
+      "file": "src/assets/zombie-female-idle.png",
+      "frameWidth": 58,
+      "frameHeight": 64,
+      "frameCount": 15,
+      "animation": "idle"
+    },
+    "walk": {
+      "file": "src/assets/zombie-female-walk.png",
+      "frameWidth": 58,
+      "frameHeight": 64,
+      "frameCount": 10,
+      "animation": "walk"
+    },
+    "attack": {
+      "file": "src/assets/zombie-female-attack.png",
+      "frameWidth": 58,
+      "frameHeight": 64,
+      "frameCount": 8,
+      "animation": "attack"
+    },
+    "dead": {
+      "file": "src/assets/zombie-female-dead.png",
+      "frameWidth": 64,
+      "frameHeight": 58,
+      "frameCount": 12,
+      "animation": "dead"
+    }
+  }
+}

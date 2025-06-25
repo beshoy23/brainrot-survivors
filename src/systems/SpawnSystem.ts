@@ -63,10 +63,10 @@ export class SpawnSystem {
       this.spawnElite(playerPos);
     }
     
-    // Clean up dead enemies
+    // Clean up dead enemies - but only if they're not playing death animation
     const enemies = this.getActiveEnemies();
     enemies.forEach(enemy => {
-      if (enemy.sprite.active && enemy.health <= 0) {
+      if (enemy.sprite.active && enemy.health <= 0 && !enemy.isDying) {
         this.releaseEnemy(enemy);
       }
     });
