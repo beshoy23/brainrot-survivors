@@ -62,79 +62,79 @@ export class GameScene extends Scene {
 
   preload(): void {
     // Load player warrior spritesheets
-    this.load.spritesheet('warrior-idle', 'src/assets/warrior-idle.png', {
+    this.load.spritesheet('warrior-idle', 'warrior-idle.png', {
       frameWidth: 192,
       frameHeight: 192
     });
-    this.load.spritesheet('warrior-run', 'src/assets/warrior-run.png', {
+    this.load.spritesheet('warrior-run', 'warrior-run.png', {
       frameWidth: 192, 
       frameHeight: 192
     });
     
     // Load zombie enemy spritesheets
     // Male Zombie (Basic/Tank/Elite Enemies)
-    this.load.spritesheet('zombie-male-idle', 'src/assets/zombie-male-idle.png', {
+    this.load.spritesheet('zombie-male-idle', 'zombie-male-idle.png', {
       frameWidth: 53,
       frameHeight: 64
     });
-    this.load.spritesheet('zombie-male-walk', 'src/assets/zombie-male-walk.png', {
+    this.load.spritesheet('zombie-male-walk', 'zombie-male-walk.png', {
       frameWidth: 53,
       frameHeight: 64
     });
-    this.load.spritesheet('zombie-male-attack', 'src/assets/zombie-male-attack.png', {
+    this.load.spritesheet('zombie-male-attack', 'zombie-male-attack.png', {
       frameWidth: 53,
       frameHeight: 64
     });
-    this.load.spritesheet('zombie-male-dead', 'src/assets/zombie-male-dead.png', {
+    this.load.spritesheet('zombie-male-dead', 'zombie-male-dead.png', {
       frameWidth: 64,
       frameHeight: 54
     });
     
     // Female Zombie (Fast/Swarm Enemies)
-    this.load.spritesheet('zombie-female-idle', 'src/assets/zombie-female-idle.png', {
+    this.load.spritesheet('zombie-female-idle', 'zombie-female-idle.png', {
       frameWidth: 58,
       frameHeight: 64
     });
-    this.load.spritesheet('zombie-female-walk', 'src/assets/zombie-female-walk.png', {
+    this.load.spritesheet('zombie-female-walk', 'zombie-female-walk.png', {
       frameWidth: 58,
       frameHeight: 64
     });
-    this.load.spritesheet('zombie-female-attack', 'src/assets/zombie-female-attack.png', {
+    this.load.spritesheet('zombie-female-attack', 'zombie-female-attack.png', {
       frameWidth: 58,
       frameHeight: 64
     });
-    this.load.spritesheet('zombie-female-dead', 'src/assets/zombie-female-dead.png', {
+    this.load.spritesheet('zombie-female-dead', 'zombie-female-dead.png', {
       frameWidth: 64,
       frameHeight: 58
     });
     
     // Load medieval warrior spritesheets for stronger enemy types
     // Black Warrior (Tank Enemies) - 8 frames of 192x192
-    this.load.spritesheet('black-warrior-idle', 'src/assets/enemies/black-warrior-idle.png', {
+    this.load.spritesheet('black-warrior-idle', 'enemies/black-warrior-idle.png', {
       frameWidth: 192,
       frameHeight: 192
     });
-    this.load.spritesheet('black-warrior-run', 'src/assets/enemies/black-warrior-run.png', {
+    this.load.spritesheet('black-warrior-run', 'enemies/black-warrior-run.png', {
       frameWidth: 192,
       frameHeight: 192
     });
     
     // Red Lancer (Elite Enemies) - 12 frames of 320x320
-    this.load.spritesheet('red-lancer-idle', 'src/assets/enemies/red-lancer-idle.png', {
+    this.load.spritesheet('red-lancer-idle', 'enemies/red-lancer-idle.png', {
       frameWidth: 320,
       frameHeight: 320
     });
-    this.load.spritesheet('red-lancer-run', 'src/assets/enemies/red-lancer-run.png', {
+    this.load.spritesheet('red-lancer-run', 'enemies/red-lancer-run.png', {
       frameWidth: 320,
       frameHeight: 320
     });
     
     // Yellow Monk (Swarm Enemies) - 6 frames of 192x192
-    this.load.spritesheet('yellow-monk-idle', 'src/assets/enemies/yellow-monk-idle.png', {
+    this.load.spritesheet('yellow-monk-idle', 'enemies/yellow-monk-idle.png', {
       frameWidth: 192,
       frameHeight: 192
     });
-    this.load.spritesheet('yellow-monk-run', 'src/assets/enemies/yellow-monk-run.png', {
+    this.load.spritesheet('yellow-monk-run', 'enemies/yellow-monk-run.png', {
       frameWidth: 192,
       frameHeight: 192
     });
