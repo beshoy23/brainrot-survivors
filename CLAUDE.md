@@ -3,6 +3,8 @@
 ## Project Overview
 A Vampire Survivors-inspired game focusing on the core tension-release gameplay loop through movement decisions and upgrade choices.
 
+**Play the game**: https://beshoy23.github.io/brainrot-survivors/
+
 ## Required Features
 
 ### Core Gameplay Loop
