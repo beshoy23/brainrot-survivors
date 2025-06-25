@@ -13,6 +13,7 @@ import { TouchInputManager } from '../mobile/TouchInputManager';
 import { DeviceDetection } from '../mobile/DeviceDetection';
 import { MobileConfig, getMobileUIScale } from '../mobile/MobileConfig';
 import { SoundManager } from '../audio/SoundManager';
+import { NoiseGenerator } from '../utils/NoiseGenerator';
 
 export class GameScene extends Scene {
   private player!: Player;
@@ -149,91 +150,172 @@ export class GameScene extends Scene {
     bg.setOrigin(0, 0);
     bg.setDepth(-20); // Ensure it's behind everything
     
-    // Create multiple background layers for depth
-    this.createBackgroundTerrain(worldWidth, worldHeight);
-    this.createBackgroundGrid(worldWidth, worldHeight);
-    this.createBackgroundDetails(worldWidth, worldHeight);
+    // Pre-generate entire background into a texture for efficiency
+    this.generateBackgroundTexture(worldWidth, worldHeight);
   }
   
-  private createBackgroundTerrain(worldWidth: number, worldHeight: number): void {
-    // Create more visible terrain variations
-    const graphics = this.add.graphics();
-    graphics.setDepth(-10);
+  private generateBackgroundTexture(worldWidth: number, worldHeight: number): void {
+    // Create render texture for the background
+    const rt = this.add.renderTexture(0, 0, worldWidth, worldHeight);
+    rt.setOrigin(0, 0);
+    rt.setDepth(-15);
     
-    // Generate organic-looking ground patches with better visibility
-    for (let i = 0; i < 100; i++) {
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight;
-      const size = 60 + Math.random() * 150;
-      
-      // Much lighter and more visible colors
-      const colors = [0x5a5a5a, 0x656565, 0x707070, 0x6d6d6d];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      
-      graphics.fillStyle(color, 0.8 + Math.random() * 0.2); // Very high opacity
-      graphics.fillCircle(x, y, size);
+    // Use larger tiles for efficiency
+    const tileSize = 64; // Larger tiles = better performance
+    const tilesX = Math.ceil(worldWidth / tileSize);
+    const tilesY = Math.ceil(worldHeight / tileSize);
+    
+    // Initialize noise generators once
+    const elevationNoise = new NoiseGenerator(12345);
+    const biomeNoise = new NoiseGenerator(54321);
+    const detailNoise = new NoiseGenerator(99999);
+    
+    // Pre-calculate and cache all noise values
+    const noiseCache = {
+      elevation: new Float32Array(tilesX * tilesY),
+      biome: new Float32Array(tilesX * tilesY),
+      detail: new Float32Array(tilesX * tilesY)
+    };
+    
+    // Fill cache in one pass
+    for (let x = 0; x < tilesX; x++) {
+      for (let y = 0; y < tilesY; y++) {
+        const idx = y * tilesX + x;
+        noiseCache.elevation[idx] = elevationNoise.octaveNoise(x, y, 3, 0.6, 0.02);
+        noiseCache.biome[idx] = biomeNoise.octaveNoise(x, y, 2, 0.5, 0.01);
+        noiseCache.detail[idx] = detailNoise.octaveNoise(x, y, 1, 0.5, 0.1);
+      }
     }
+    
+    // Create temporary graphics for drawing
+    const tempGraphics = this.add.graphics();
+    
+    // Draw terrain layer
+    this.drawCachedTerrain(tempGraphics, tilesX, tilesY, tileSize, noiseCache);
+    rt.draw(tempGraphics);
+    tempGraphics.clear();
+    
+    // Draw grid layer
+    this.drawCachedGrid(tempGraphics, worldWidth, worldHeight, tileSize, noiseCache);
+    rt.draw(tempGraphics);
+    tempGraphics.clear();
+    
+    // Draw details layer
+    this.drawCachedDetails(tempGraphics, tilesX, tilesY, tileSize, noiseCache);
+    rt.draw(tempGraphics);
+    
+    // Clean up temporary graphics
+    tempGraphics.destroy();
+    
+    // Save the texture so it never needs to be regenerated
+    rt.saveTexture('background-texture');
   }
   
-  private createBackgroundGrid(worldWidth: number, worldHeight: number): void {
-    // More visible grid pattern for spatial reference
-    const graphics = this.add.graphics();
-    graphics.setDepth(-8);
-    graphics.lineStyle(2, 0x808080, 0.6); // Much brighter and more visible
-    
-    const gridSize = 128; // Larger grid for bigger world
-    
-    // Vertical lines
-    for (let x = 0; x < worldWidth; x += gridSize) {
-      graphics.moveTo(x, 0);
-      graphics.lineTo(x, worldHeight);
-    }
-    
-    // Horizontal lines  
-    for (let y = 0; y < worldHeight; y += gridSize) {
-      graphics.moveTo(0, y);
-      graphics.lineTo(worldWidth, y);
-    }
-    
-    graphics.strokePath();
-  }
-  
-  private createBackgroundDetails(worldWidth: number, worldHeight: number): void {
-    // Add more visible scattered decorative elements
-    for (let i = 0; i < 150; i++) {
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight;
-      
-      // Random decorative elements with better visibility
-      const type = Math.floor(Math.random() * 3);
-      const graphics = this.add.graphics();
-      graphics.setPosition(x, y);
-      graphics.setDepth(-5);
-      graphics.setAlpha(0.7 + Math.random() * 0.3); // Much higher visibility
-      
-      switch(type) {
-        case 0: // Bigger, more visible rocks
-          graphics.fillStyle(0x999999);
-          graphics.fillCircle(0, 0, 3 + Math.random() * 6);
-          break;
-          
-        case 1: // More visible debris crosses
-          graphics.lineStyle(3, 0x888888);
-          graphics.beginPath();
-          graphics.moveTo(-4, 0);
-          graphics.lineTo(4, 0);
-          graphics.moveTo(0, -4);
-          graphics.lineTo(0, 4);
-          graphics.strokePath();
-          break;
-          
-        case 2: // Bigger patches
-          graphics.fillStyle(0xaaaaaa);
-          graphics.fillRect(-3, -2, 6, 4);
-          break;
+  private drawCachedTerrain(graphics: Phaser.GameObjects.Graphics, tilesX: number, tilesY: number, 
+                           tileSize: number, cache: any): void {
+    for (let x = 0; x < tilesX; x++) {
+      for (let y = 0; y < tilesY; y++) {
+        const idx = y * tilesX + x;
+        const elevation = cache.elevation[idx];
+        const biome = cache.biome[idx];
+        
+        // Skip low areas
+        if (elevation < 0.25) continue;
+        
+        // Determine color from cached values
+        let color;
+        if (biome > 0.6) {
+          // Rocky biome
+          color = elevation > 0.7 ? 0x8a7a6a : elevation > 0.5 ? 0x6a5a4a : 0x5a4a3a;
+        } else if (biome > 0.3) {
+          // Standard terrain  
+          color = elevation > 0.7 ? 0x7a7a7a : elevation > 0.5 ? 0x5a5a5a : 0x4a4a4a;
+        } else {
+          // Wet biome
+          color = elevation > 0.7 ? 0x6a7a7a : elevation > 0.5 ? 0x4a5a5a : 0x3a4a4a;
+        }
+        
+        const alpha = 0.3 + (elevation * 0.5);
+        graphics.fillStyle(color, alpha);
+        graphics.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
       }
     }
   }
+  
+  private drawCachedGrid(graphics: Phaser.GameObjects.Graphics, worldWidth: number, 
+                        worldHeight: number, tileSize: number, cache: any): void {
+    const gridSize = 128;
+    const tilesX = Math.ceil(worldWidth / tileSize);
+    
+    // Draw grid with cached elevation values
+    for (let x = 0; x < worldWidth; x += gridSize) {
+      for (let y = 0; y < worldHeight; y += gridSize) {
+        // Get cached elevation
+        const tileX = Math.floor(x / tileSize);
+        const tileY = Math.floor(y / tileSize);
+        const idx = tileY * tilesX + tileX;
+        const elevation = cache.elevation[idx] || 0.5;
+        
+        const opacity = 0.1 + (elevation * 0.4);
+        graphics.lineStyle(2, 0x808080, opacity);
+        
+        // Draw grid segments
+        if (x + gridSize <= worldWidth) {
+          graphics.moveTo(x, y);
+          graphics.lineTo(x + gridSize, y);
+        }
+        if (y + gridSize <= worldHeight) {
+          graphics.moveTo(x, y);
+          graphics.lineTo(x, y + gridSize);
+        }
+      }
+    }
+    graphics.strokePath();
+  }
+  
+  private drawCachedDetails(graphics: Phaser.GameObjects.Graphics, tilesX: number, tilesY: number,
+                           tileSize: number, cache: any): void {
+    // Place details based on cached noise
+    for (let x = 0; x < tilesX; x++) {
+      for (let y = 0; y < tilesY; y++) {
+        const idx = y * tilesX + x;
+        const detail = cache.detail[idx];
+        
+        // Only spawn if detail noise is high
+        if (detail < 0.8) continue;
+        
+        const elevation = cache.elevation[idx];
+        const biome = cache.biome[idx];
+        
+        // Position with some randomness
+        const worldX = x * tileSize + tileSize/2 + (Math.random() - 0.5) * 20;
+        const worldY = y * tileSize + tileSize/2 + (Math.random() - 0.5) * 20;
+        
+        graphics.save();
+        graphics.translateCanvas(worldX, worldY);
+        
+        // Draw appropriate detail
+        if (biome > 0.6 && elevation > 0.5) {
+          // Rocks
+          graphics.fillStyle(0x8a7a6a, 0.6 + elevation * 0.3);
+          const size = 4 + elevation * 8;
+          graphics.fillCircle(0, 0, size);
+        } else if (biome < 0.3 && elevation > 0.4) {
+          // Puddles
+          graphics.fillStyle(0x4a6a6a, 0.5 + elevation * 0.3);
+          graphics.fillRect(-4, -3, 8, 6);
+        } else if (elevation > 0.6) {
+          // Debris
+          graphics.lineStyle(2, 0x7a7a7a, 0.7);
+          graphics.strokeCircle(0, 0, 3);
+        }
+        
+        graphics.restore();
+      }
+    }
+  }
+  
+  // Old methods removed - now using optimized texture generation
 
   update(time: number, delta: number): void {
     // Stop all updates if game is over
