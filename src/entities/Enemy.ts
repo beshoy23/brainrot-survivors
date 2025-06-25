@@ -7,7 +7,7 @@ import { NoiseGenerator } from '../utils/NoiseGenerator';
 import { EnemyVariationConfig as VariationConfig } from '../config/enemyVariations';
 
 export class Enemy {
-  public sprite: GameObjects.Graphics;
+  public sprite: GameObjects.Sprite;
   public velocity: Vector2 = new Vector2();
   public health: number;
   public maxHealth: number;
@@ -48,9 +48,10 @@ export class Enemy {
   
   constructor(scene: Scene) {
     this.scene = scene;
-    this.sprite = scene.add.graphics();
+    this.sprite = scene.add.sprite(0, 0, 'red-warrior-idle', 0);
     this.sprite.setVisible(false);
     this.sprite.setActive(false);
+    this.sprite.setScale(0.15); // Scale down from 192px to ~29px
     
     // Default to basic enemy
     this.enemyType = ENEMY_TYPES.basic;
@@ -93,16 +94,20 @@ export class Enemy {
     this.speed *= (1 + this.variations.aggression * 0.2); // Up to 20% faster
     this.damage = Math.ceil(this.damage * (1 + this.variations.aggression * 0.1)); // Up to 10% more damage
     
+    // Set up sprite based on enemy type
+    this.setupEnemySprite();
+    
     this.sprite.setPosition(x, y);
     this.sprite.setVisible(true);
     this.sprite.setActive(true);
     this.sprite.setDepth(8); // Below player (10) but visible
     
-    // Apply scale
-    this.sprite.setScale(this.variations.scale);
+    // Apply scale with base sprite scale
+    const baseScale = this.getBaseScale();
+    this.sprite.setScale(baseScale * this.variations.scale);
     
-    // Draw enemy based on type
-    this.drawEnemy();
+    // Start idle animation
+    this.playIdleAnimation();
   }
   
   private generateVariations(x: number, y: number): void {
@@ -188,176 +193,150 @@ export class Enemy {
     }
   }
   
-  drawEnemy(): void {
-    this.sprite.clear();
-    
-    // Apply color variations using consistent HSV
-    const baseColor = Phaser.Display.Color.IntegerToColor(this.enemyType.color);
-    const hsv = Phaser.Display.Color.RGBToHSV(baseColor.red / 255, baseColor.green / 255, baseColor.blue / 255);
-    
-    // Apply variations with proper bounds checking
-    hsv.h = (hsv.h + this.variations.hue * VariationConfig.color.hueShiftRange + 1) % 1; // Hue shift with proper wrapping
-    hsv.s = Math.max(0, Math.min(1, hsv.s * this.variations.saturation)); // Saturation clamped to [0,1]
-    hsv.v = Math.max(0, Math.min(1, hsv.v * this.variations.brightness)); // Value/Brightness clamped to [0,1]
-    
-    // More aggressive = darker and more saturated (not redder to avoid confusion)
-    if (this.variations.aggression > VariationConfig.color.aggressionThreshold) {
-      hsv.s = Math.min(1, hsv.s * VariationConfig.color.aggressionSatBoost); // More saturated
-      hsv.v = Math.max(0.3, hsv.v * VariationConfig.color.aggressionBrightness); // Darker
-    }
-    
-    const variedColor = Phaser.Display.Color.HSVToRGB(hsv.h, hsv.s, hsv.v);
-    const finalColor = Phaser.Display.Color.GetColor(
-      Math.floor(variedColor.r * 255),
-      Math.floor(variedColor.g * 255),
-      Math.floor(variedColor.b * 255)
-    );
-    
-    this.sprite.fillStyle(finalColor, 1);
-    this.sprite.lineStyle(2, 0xffffff, 0.3); // White outline
-    
-    const size = this.enemyType.size;
-    const halfSize = size / 2;
-    
-    switch (this.enemyType.shape) {
-      case 'square':
-        this.sprite.fillRect(-halfSize, -halfSize, size, size);
-        this.sprite.strokeRect(-halfSize, -halfSize, size, size);
-        break;
-        
-      case 'circle':
-        this.sprite.fillCircle(0, 0, halfSize);
-        this.sprite.strokeCircle(0, 0, halfSize);
-        break;
-        
-      case 'diamond':
-        this.sprite.beginPath();
-        this.sprite.moveTo(0, -halfSize);
-        this.sprite.lineTo(halfSize, 0);
-        this.sprite.lineTo(0, halfSize);
-        this.sprite.lineTo(-halfSize, 0);
-        this.sprite.closePath();
-        this.sprite.fill();
-        this.sprite.stroke();
-        break;
-        
-      case 'triangle':
-        this.sprite.beginPath();
-        this.sprite.moveTo(0, -halfSize);
-        this.sprite.lineTo(halfSize, halfSize);
-        this.sprite.lineTo(-halfSize, halfSize);
-        this.sprite.closePath();
-        this.sprite.fill();
-        this.sprite.stroke();
-        break;
-    }
-    
-    // Add variation-based features
-    this.drawVariationFeatures();
-    
-    // Add biome-based visual effects
-    this.drawBiomeEffects();
-  }
-  
-  private drawVariationFeatures(): void {
-    const size = this.enemyType.size;
-    const halfSize = size / 2;
-    
-    // Feature intensity based on variation
-    const featureAlpha = 0.3 + this.variations.features * 0.4;
+  private setupEnemySprite(): void {
+    // Set sprite texture based on enemy type
+    let idleTexture: string;
     
     switch (this.enemyType.id) {
       case 'basic':
-        // Battle scars for basic enemies
-        if (this.variations.features > 0.5) {
-          this.sprite.lineStyle(1, 0x000000, featureAlpha);
-          this.sprite.beginPath();
-          this.sprite.moveTo(-halfSize * 0.7, -halfSize * 0.7);
-          this.sprite.lineTo(-halfSize * 0.3, -halfSize * 0.3);
-          this.sprite.strokePath();
-        }
+        idleTexture = 'red-warrior-idle';
         break;
-        
       case 'fast':
-        // Ghostly trail effect
-        if (this.variations.features > 0.3) {
-          this.sprite.fillStyle(0x00ff00, featureAlpha * 0.3);
-          this.sprite.fillCircle(-halfSize * 0.3, 0, halfSize * 0.4);
-          this.sprite.fillCircle(-halfSize * 0.6, 0, halfSize * 0.3);
-        }
+        idleTexture = 'red-archer-idle';
         break;
-        
       case 'tank':
-        // Armor plating
-        if (this.variations.features > 0.4) {
-          this.sprite.lineStyle(1, 0x400000, featureAlpha);
-          // Draw armor lines
-          for (let i = 0; i < 3; i++) {
-            const y = -halfSize * 0.5 + (i * halfSize * 0.5);
-            this.sprite.moveTo(-halfSize * 0.8, y);
-            this.sprite.lineTo(halfSize * 0.8, y);
-          }
-          this.sprite.strokePath();
-        }
-        // Rust spots
-        if (this.variations.features > 0.7) {
-          this.sprite.fillStyle(0x8B4513, featureAlpha * 0.5);
-          this.sprite.fillCircle(halfSize * 0.5, -halfSize * 0.3, 3);
-          this.sprite.fillCircle(-halfSize * 0.4, halfSize * 0.4, 2);
-        }
+        idleTexture = 'red-lancer-idle';
         break;
-        
-      case 'swarm':
-        // Pack markings - synchronized glow using cached phase
-        if (this.variations.aggression > 0.6) {
-          const glowIntensity = Math.sin((Date.now() * 0.003) + this.variations.glowPhase) * 0.5 + 0.5;
-          this.sprite.fillStyle(0xffff00, glowIntensity * featureAlpha);
-          this.sprite.fillCircle(0, 0, halfSize * 0.3);
-        }
-        break;
-        
       case 'elite':
-        // Intimidation aura
-        this.sprite.lineStyle(3, 0x9400D3, featureAlpha * 0.7);
-        this.sprite.strokeCircle(0, 0, halfSize + 4);
-        // Power crystals
-        if (this.variations.features > 0.5) {
-          this.sprite.fillStyle(0xE6E6FA, featureAlpha);
-          const crystalSize = 3;
-          this.sprite.fillRect(-halfSize - crystalSize, -halfSize * 0.5, crystalSize, crystalSize * 2);
-          this.sprite.fillRect(halfSize, -halfSize * 0.5, crystalSize, crystalSize * 2);
-        }
+        idleTexture = 'black-warrior-idle';
         break;
+      case 'swarm':
+        idleTexture = 'yellow-monk-idle';
+        break;
+      default:
+        idleTexture = 'red-warrior-idle';
+    }
+    
+    this.sprite.setTexture(idleTexture, 0);
+    this.createEnemyAnimations();
+  }
+  
+  private getBaseScale(): number {
+    // Different base scales for different enemy types
+    switch (this.enemyType.id) {
+      case 'basic':
+        return 0.15; // Red warrior: 192px -> ~29px
+      case 'fast':
+        return 0.12; // Red archer: smaller/faster
+      case 'tank':
+        return 0.12; // Red lancer: 320px -> ~38px 
+      case 'elite':
+        return 0.18; // Black warrior: larger/imposing
+      case 'swarm':
+        return 0.1;  // Yellow monk: smallest
+      default:
+        return 0.15;
     }
   }
   
-  private drawBiomeEffects(): void {
-    // Use cached biome value
-    const biomeValue = this.variations.biomeValue;
-    const size = this.enemyType.size;
-    const halfSize = size / 2;
+  private createEnemyAnimations(): void {
+    const scene = this.scene;
+    const enemyId = this.enemyType.id;
     
-    if (biomeValue > 0.6) {
-      // Rocky biome - dust particles
-      this.sprite.fillStyle(0xC4A484, 0.3);
-      for (let i = 0; i < 3; i++) {
-        const angle = (i / 3) * Math.PI * 2 + this.variations.features;
-        const dist = halfSize * 0.8;
-        this.sprite.fillCircle(
-          Math.cos(angle) * dist,
-          Math.sin(angle) * dist,
-          1.5
-        );
+    // Create idle animation for this enemy type
+    const idleKey = `${enemyId}-idle-anim`;
+    const runKey = `${enemyId}-run-anim`;
+    
+    if (!scene.anims.exists(idleKey)) {
+      let spriteKey: string;
+      let frameCount: number;
+      
+      switch (enemyId) {
+        case 'basic':
+          spriteKey = 'red-warrior-idle';
+          frameCount = 7; // 8 frames (0-7)
+          break;
+        case 'fast':
+          spriteKey = 'red-archer-idle';
+          frameCount = 5; // 6 frames (0-5)
+          break;
+        case 'tank':
+          spriteKey = 'red-lancer-idle';
+          frameCount = 11; // 12 frames (0-11)
+          break;
+        case 'elite':
+          spriteKey = 'black-warrior-idle';
+          frameCount = 7; // 8 frames (0-7)
+          break;
+        case 'swarm':
+          spriteKey = 'yellow-monk-idle';
+          frameCount = 7; // 8 frames (0-7)
+          break;
+        default:
+          spriteKey = 'red-warrior-idle';
+          frameCount = 7;
       }
-    } else if (biomeValue < 0.3) {
-      // Wet biome - water droplets/shine
-      this.sprite.fillStyle(0xADD8E6, 0.4);
-      this.sprite.fillCircle(-halfSize * 0.3, -halfSize * 0.3, 2);
-      // Glossy highlight
-      this.sprite.lineStyle(1, 0xE0FFFF, 0.3);
-      this.sprite.strokeCircle(0, 0, halfSize * 0.9);
+      
+      scene.anims.create({
+        key: idleKey,
+        frames: scene.anims.generateFrameNumbers(spriteKey, { 
+          start: 0, 
+          end: frameCount 
+        }),
+        frameRate: 6,
+        repeat: -1
+      });
+    }
+    
+    // Create run animation (simplified - using idle for now)
+    if (!scene.anims.exists(runKey)) {
+      let runSpriteKey: string;
+      let runFrameCount: number;
+      
+      switch (enemyId) {
+        case 'basic':
+          runSpriteKey = 'red-warrior-run';
+          runFrameCount = 7;
+          break;
+        case 'fast':
+          runSpriteKey = 'red-archer-run';
+          runFrameCount = 5;
+          break;
+        case 'tank':
+          runSpriteKey = 'red-lancer-run';
+          runFrameCount = 11;
+          break;
+        case 'elite':
+          runSpriteKey = 'black-warrior-run';
+          runFrameCount = 7;
+          break;
+        case 'swarm':
+          runSpriteKey = 'yellow-monk-run';
+          runFrameCount = 7;
+          break;
+        default:
+          runSpriteKey = 'red-warrior-run';
+          runFrameCount = 7;
+      }
+      
+      scene.anims.create({
+        key: runKey,
+        frames: scene.anims.generateFrameNumbers(runSpriteKey, { 
+          start: 0, 
+          end: runFrameCount 
+        }),
+        frameRate: 10,
+        repeat: -1
+      });
     }
   }
+  
+  private playIdleAnimation(): void {
+    const animKey = `${this.enemyType.id}-idle-anim`;
+    this.sprite.play(animKey);
+  }
+  
+  // Removed graphics drawing methods - now using animated sprites
 
   update(deltaTime: number, playerPos: Vector2): void {
     if (!this.sprite.active) return;
@@ -407,6 +386,30 @@ export class Enemy {
         this.velocity.x = 0;
         this.velocity.y = 0;
       }
+    }
+    
+    // Update animations and facing direction
+    this.updateEnemyAnimation(moveX, moveY);
+  }
+  
+  private updateEnemyAnimation(moveX: number, moveY: number): void {
+    // Update facing direction
+    if (moveX > 0) {
+      this.sprite.setFlipX(false); // Face right
+    } else if (moveX < 0) {
+      this.sprite.setFlipX(true);  // Face left
+    }
+    
+    // Play running animation when moving, idle when stopped
+    const isMoving = moveX !== 0 || moveY !== 0;
+    const currentAnim = this.sprite.anims.currentAnim?.key;
+    const idleKey = `${this.enemyType.id}-idle-anim`;
+    const runKey = `${this.enemyType.id}-run-anim`;
+    
+    if (isMoving && currentAnim !== runKey) {
+      this.sprite.play(runKey);
+    } else if (!isMoving && currentAnim !== idleKey) {
+      this.sprite.play(idleKey);
     }
   }
 

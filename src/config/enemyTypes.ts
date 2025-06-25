@@ -21,7 +21,7 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     speed: 220, // Reduced from 280
     damage: 1, // VS-style: fast but weaker damage
     size: 14, // Smaller
-    color: 0x00ff00, // Green - distinct from gems
+    color: 0x00ffff, // Cyan - distinct from green gems
     shape: 'diamond',
     spawnWeight: 6,
     minWaveTime: 30 // Appears after 30 seconds

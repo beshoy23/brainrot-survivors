@@ -60,6 +60,69 @@ export class GameScene extends Scene {
     super({ key: 'GameScene' });
   }
 
+  preload(): void {
+    // Load player warrior spritesheets
+    this.load.spritesheet('warrior-idle', 'src/assets/warrior-idle.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    this.load.spritesheet('warrior-run', 'src/assets/warrior-run.png', {
+      frameWidth: 192, 
+      frameHeight: 192
+    });
+    
+    // Load enemy spritesheets
+    // Red Warrior (Basic Enemy)
+    this.load.spritesheet('red-warrior-idle', 'src/assets/enemies/red-warrior-idle.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    this.load.spritesheet('red-warrior-run', 'src/assets/enemies/red-warrior-run.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    
+    // Red Archer (Fast Enemy)
+    this.load.spritesheet('red-archer-idle', 'src/assets/enemies/red-archer-idle.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    this.load.spritesheet('red-archer-run', 'src/assets/enemies/red-archer-run.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    
+    // Red Lancer (Tank Enemy)
+    this.load.spritesheet('red-lancer-idle', 'src/assets/enemies/red-lancer-idle.png', {
+      frameWidth: 320,
+      frameHeight: 320
+    });
+    this.load.spritesheet('red-lancer-run', 'src/assets/enemies/red-lancer-run.png', {
+      frameWidth: 320,
+      frameHeight: 320
+    });
+    
+    // Black Warrior (Elite Enemy)
+    this.load.spritesheet('black-warrior-idle', 'src/assets/enemies/black-warrior-idle.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    this.load.spritesheet('black-warrior-run', 'src/assets/enemies/black-warrior-run.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    
+    // Yellow Monk (Swarm Enemy)
+    this.load.spritesheet('yellow-monk-idle', 'src/assets/enemies/yellow-monk-idle.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+    this.load.spritesheet('yellow-monk-run', 'src/assets/enemies/yellow-monk-run.png', {
+      frameWidth: 192,
+      frameHeight: 192
+    });
+  }
+
   create(): void {
     // Initialize upgrade manager globally
     (window as any).upgradeManager = UpgradeManager.getInstance();

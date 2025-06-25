@@ -68,14 +68,45 @@ export class WeaponEffectSystem {
     return id;
   }
   
-  createWhipSlash(player: Player, direction: number, length: number = 150): string {
+  createWhipSlash(player: Player, direction: number, length: number = 70): string {
     const id = `whip_slash_${Date.now()}`;
     const graphics = this.scene.add.graphics();
     graphics.setDepth(6); // Above most things
     
-    const pos = player.getPosition();
+    // CAPTURE POSITION ONCE - fixed position, doesn't follow player
+    const fixedPos = player.getPosition();
     let lifeTime = 0;
-    const maxLifeTime = 200; // 200ms fade out
+    const maxLifeTime = 150; // Quick 150ms flash
+    
+    // Draw the whip arc ONCE at creation
+    const arcAngle = 35; // Small 35-degree arc
+    const baseAngle = direction > 0 ? 0 : 180; // Right: 0°, Left: 180°
+    const startAngle = baseAngle - arcAngle/2;
+    const endAngle = baseAngle + arcAngle/2;
+    
+    // Create curved slash using connected line segments
+    const segments = 4;
+    const points = [];
+    
+    // Start from player position and curve outward
+    for (let i = 0; i <= segments; i++) {
+      const progress = i / segments;
+      const angle = Phaser.Math.DegToRad(startAngle + (endAngle - startAngle) * progress);
+      const distance = 20 + (length - 20) * progress; // Start close, extend outward
+      
+      const x = fixedPos.x + Math.cos(angle) * distance;
+      const y = fixedPos.y + Math.sin(angle) * distance;
+      points.push({x, y});
+    }
+    
+    // Draw the arc shape ONCE at creation time
+    graphics.lineStyle(6, 0xFFFFFF, 1);
+    graphics.beginPath();
+    graphics.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      graphics.lineTo(points[i].x, points[i].y);
+    }
+    graphics.strokePath();
     
     const effect: WeaponEffect = {
       id,
@@ -88,67 +119,10 @@ export class WeaponEffectSystem {
           return;
         }
         
-        graphics.clear();
-        
-        // Calculate fade based on lifetime
+        // ONLY UPDATE ALPHA - don't redraw anything
         const fadeProgress = lifeTime / maxLifeTime;
         const alpha = 1 - fadeProgress;
-        
-        // Draw arc slash
-        const startAngle = direction > 0 ? -45 : 180 + 45; // Right: -45°, Left: 225°
-        const endAngle = direction > 0 ? 45 : 180 - 45; // Right: 45°, Left: 135°
-        
-        // Multiple arc layers for thickness and glow
-        const layers = 3;
-        for (let i = 0; i < layers; i++) {
-          const layerAlpha = alpha * (1 - i * 0.3);
-          const thickness = 8 - i * 2;
-          
-          graphics.lineStyle(thickness, 0xFFFFFF, layerAlpha);
-          graphics.beginPath();
-          graphics.arc(
-            pos.x,
-            pos.y,
-            length - i * 10,
-            Phaser.Math.DegToRad(startAngle),
-            Phaser.Math.DegToRad(endAngle),
-            false
-          );
-          graphics.strokePath();
-        }
-        
-        // Add motion blur effect - trailing lines
-        const blurCount = 3;
-        for (let i = 1; i <= blurCount; i++) {
-          const blurAlpha = alpha * (0.3 / i);
-          const blurOffset = direction * i * 8;
-          
-          graphics.lineStyle(2, 0xFFFFFF, blurAlpha);
-          graphics.beginPath();
-          graphics.arc(
-            pos.x - blurOffset,
-            pos.y,
-            length,
-            Phaser.Math.DegToRad(startAngle),
-            Phaser.Math.DegToRad(endAngle),
-            false
-          );
-          graphics.strokePath();
-        }
-        
-        // Add impact particles at the arc end
-        if (fadeProgress < 0.3) {
-          const particleCount = 3;
-          for (let i = 0; i < particleCount; i++) {
-            const angle = Phaser.Math.DegToRad(direction > 0 ? 45 - i * 15 : 135 + i * 15);
-            const particleX = pos.x + Math.cos(angle) * length;
-            const particleY = pos.y + Math.sin(angle) * length;
-            const particleSize = 3 * (1 - fadeProgress);
-            
-            graphics.fillStyle(0xFFFF88, alpha * 0.8);
-            graphics.fillCircle(particleX, particleY, particleSize);
-          }
-        }
+        graphics.alpha = alpha;
       },
       destroy: () => {
         graphics.destroy();

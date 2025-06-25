@@ -4,7 +4,7 @@ import { Vector2 } from '../utils/Vector2';
 import { VirtualJoystick } from '../mobile/VirtualJoystick';
 
 export class Player {
-  public sprite: GameObjects.Graphics;
+  public sprite: GameObjects.Sprite;
   public velocity: Vector2 = new Vector2();
   public health: number;
   public maxHealth: number;
@@ -28,9 +28,14 @@ export class Player {
   private isMoving: boolean = false;
 
   constructor(scene: Scene, x: number, y: number) {
-    // Create player as a graphics object for better appearance
-    this.sprite = this.createPlayerGraphics(scene, x, y);
-    this.sprite.setDepth(10);
+    // Create player as animated sprite
+    this.sprite = scene.add.sprite(x, y, 'warrior-idle', 0);
+    this.sprite.setScale(0.25); // Scale down from 192x192 to ~48x48
+    this.sprite.setDepth(GameConfig.player.depth);
+    
+    // Create animations
+    this.createWarriorAnimations(scene);
+    this.sprite.play('warrior-idle-anim');
     
     this.health = GameConfig.player.maxHealth;
     this.maxHealth = GameConfig.player.maxHealth;
@@ -60,6 +65,9 @@ export class Player {
     if (this.isMoving) {
       this.updateAfterimage();
     }
+    
+    // Update animation based on movement
+    this.updateAnimation();
     
     // Keep player within the larger world bounds (with some margin)
     const margin = 100;
@@ -173,38 +181,53 @@ export class Player {
     return this.experience / this.experienceToNext;
   }
 
-  private createPlayerGraphics(scene: Scene, x: number, y: number): Phaser.GameObjects.Graphics {
-    const graphics = scene.add.graphics();
-    graphics.setPosition(x, y);
+  private createWarriorAnimations(scene: Scene): void {
+    // Create idle animation
+    if (!scene.anims.exists('warrior-idle-anim')) {
+      scene.anims.create({
+        key: 'warrior-idle-anim',
+        frames: scene.anims.generateFrameNumbers('warrior-idle', { 
+          start: 0, 
+          end: 7  // 8 frames (0-7)
+        }),
+        frameRate: 6, // Slower for idle
+        repeat: -1
+      });
+    }
     
-    // Player body - gradient blue circle
-    graphics.fillGradientStyle(0x4a90e2, 0x2c5aa0, 0x1e3a8a, 0x4a90e2, 1);
-    graphics.fillCircle(0, 0, 12);
+    // Create run animation
+    if (!scene.anims.exists('warrior-run-anim')) {
+      scene.anims.create({
+        key: 'warrior-run-anim',
+        frames: scene.anims.generateFrameNumbers('warrior-run', { 
+          start: 0, 
+          end: 5  // 6 frames (0-5)
+        }),
+        frameRate: 10, // Faster for running
+        repeat: -1
+      });
+    }
+  }
+  
+  private updateAnimation(): void {
+    // Update facing direction based on horizontal movement
+    if (this.velocity.x > 0) {
+      this.sprite.setFlipX(false); // Face right
+    } else if (this.velocity.x < 0) {
+      this.sprite.setFlipX(true);  // Face left (flip horizontally)
+    }
+    // If only moving vertically, keep current facing direction
     
-    // Inner core - bright center
-    graphics.fillStyle(0x87ceeb, 0.8);
-    graphics.fillCircle(0, 0, 8);
-    
-    // Eyes - white with black pupils
-    graphics.fillStyle(0xffffff, 1);
-    graphics.fillCircle(-4, -3, 2.5);
-    graphics.fillCircle(4, -3, 2.5);
-    
-    graphics.fillStyle(0x000000, 1);
-    graphics.fillCircle(-4, -3, 1);
-    graphics.fillCircle(4, -3, 1);
-    
-    // Mouth - simple smile
-    graphics.lineStyle(1.5, 0x000000, 1);
-    graphics.beginPath();
-    graphics.arc(0, 2, 3, 0.2, Math.PI - 0.2);
-    graphics.strokePath();
-    
-    // Movement direction indicator
-    graphics.fillStyle(0xffffff, 0.7);
-    graphics.fillCircle(0, -8, 1.5);
-    
-    return graphics;
+    // Switch between idle and running animations
+    if (this.isMoving) {
+      if (this.sprite.anims.currentAnim?.key !== 'warrior-run-anim') {
+        this.sprite.play('warrior-run-anim');
+      }
+    } else {
+      if (this.sprite.anims.currentAnim?.key !== 'warrior-idle-anim') {
+        this.sprite.play('warrior-idle-anim');
+      }
+    }
   }
 
   private updateAfterimage(): void {
