@@ -45,8 +45,8 @@ export class UpgradeManager {
   }
 
   getRandomUpgrades(count: number): (UpgradeDefinition | WeaponUpgradeDefinition)[] {
-    // Get all available upgrades
-    const available = Object.values(UPGRADES).filter(upgrade => 
+    // Get all available regular upgrades
+    const availableRegular = Object.values(UPGRADES).filter(upgrade => 
       this.canUpgrade(upgrade.id)
     );
     
@@ -55,12 +55,42 @@ export class UpgradeManager {
       !hasWeapon(weapon.id)
     );
     
-    // Combine all options
-    const allOptions = [...available, ...weaponUnlocks];
+    // Categorize regular upgrades
+    const weaponCategoryUpgrades = availableRegular.filter(upgrade => 
+      upgrade.category === 'weapon'
+    );
+    const nonWeaponUpgrades = availableRegular.filter(upgrade => 
+      upgrade.category !== 'weapon'
+    );
     
-    // Shuffle and take the requested count
-    const shuffled = [...allOptions].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(count, shuffled.length));
+    // Combine all weapon-related upgrades (weapon category + weapon unlocks)
+    const allWeaponUpgrades = [...weaponCategoryUpgrades, ...weaponUnlocks];
+    
+    // Guarantee at least 2 weapon upgrades (if available)
+    const selectedUpgrades: (UpgradeDefinition | WeaponUpgradeDefinition)[] = [];
+    const minWeaponUpgrades = Math.min(2, allWeaponUpgrades.length);
+    
+    // Select guaranteed weapon upgrades
+    if (minWeaponUpgrades > 0) {
+      const shuffledWeaponUpgrades = [...allWeaponUpgrades].sort(() => Math.random() - 0.5);
+      selectedUpgrades.push(...shuffledWeaponUpgrades.slice(0, minWeaponUpgrades));
+    }
+    
+    // Fill remaining slots with any available upgrades
+    const remainingSlots = count - selectedUpgrades.length;
+    if (remainingSlots > 0) {
+      // Get all remaining options (excluding already selected)
+      const usedIds = new Set(selectedUpgrades.map(u => u.id));
+      const remainingOptions = [...allWeaponUpgrades, ...nonWeaponUpgrades]
+        .filter(upgrade => !usedIds.has(upgrade.id));
+      
+      // Shuffle and take remaining slots
+      const shuffledRemaining = [...remainingOptions].sort(() => Math.random() - 0.5);
+      selectedUpgrades.push(...shuffledRemaining.slice(0, remainingSlots));
+    }
+    
+    // Final shuffle to randomize order while maintaining weapon guarantee
+    return selectedUpgrades.sort(() => Math.random() - 0.5);
   }
 
   getUpgradeStats(): Map<string, number> {

@@ -41,6 +41,7 @@ export class GameScene extends Scene {
   
   // Pause button
   private pauseButton!: Phaser.GameObjects.Container;
+  private pauseButtonHitArea!: Phaser.GameObjects.Shape;
   
   // Mobile controls
   private virtualJoystick?: VirtualJoystick;
@@ -126,7 +127,7 @@ export class GameScene extends Scene {
       this.scale.height * 2 + margin * 2
     );
     
-    // Create UI
+    // Create UI (but not pause button yet)
     this.createUI();
     
     // Create mobile controls if needed
@@ -134,8 +135,20 @@ export class GameScene extends Scene {
       this.createMobileControls();
     }
     
+    // Create pause button LAST to ensure highest input priority
+    this.createPauseButton();
+    
     // Reset survival time
     this.survivalTime = 0;
+    
+    // Set up scene resume handler to restore button functionality
+    this.events.on('resume', () => {
+      this.setupPauseButtonEvents();
+      // Re-enable virtual joystick after resume
+      if (this.virtualJoystick) {
+        this.virtualJoystick.setEnabled(true);
+      }
+    });
     
     // Game scene initialization complete
   }
@@ -237,9 +250,6 @@ export class GameScene extends Scene {
     this.balanceText = this.add.text(0, 0, '');
     this.balanceText.setVisible(false);
     
-    // Pause button - clean minimal design
-    this.createPauseButton();
-    
     // REMOVED - Cleanup complete
   }
 
@@ -247,21 +257,24 @@ export class GameScene extends Scene {
     // Clean, minimal UI updates
     const padding = 16;
     
-    // Update health bar - thin line under HP text
+    // Update health bar - prominent bar under HP text
     this.healthBar.clear();
     const healthPercent = this.player.health / this.player.maxHealth;
-    const barWidth = 100;
-    const barHeight = 3;
-    const barY = padding + 20;
+    const barWidth = this.isMobile ? 120 : 100;
+    const barHeight = this.isMobile ? 6 : 4;
+    const barY = padding + 22;
     
-    // HP bar background
-    this.healthBar.fillStyle(0x333333, 0.5);
+    // HP bar background - dark with border
+    this.healthBar.fillStyle(0x333333, 0.8);
     this.healthBar.fillRect(padding, barY, barWidth, barHeight);
+    this.healthBar.lineStyle(1, 0x666666, 0.8);
+    this.healthBar.strokeRect(padding, barY, barWidth, barHeight);
     
-    // HP bar fill
+    // HP bar fill with color coding
     if (healthPercent > 0) {
-      this.healthBar.fillStyle(healthPercent > 0.3 ? 0x00ff00 : 0xff0000);
-      this.healthBar.fillRect(padding, barY, barWidth * healthPercent, barHeight);
+      const color = healthPercent > 0.6 ? 0x00ff00 : healthPercent > 0.3 ? 0xffff00 : 0xff0000;
+      this.healthBar.fillStyle(color, 1.0);
+      this.healthBar.fillRect(padding + 1, barY + 1, (barWidth - 2) * healthPercent, barHeight - 2);
     }
     
     // Update texts - minimal info
@@ -277,16 +290,22 @@ export class GameScene extends Scene {
     // Level display - just the number
     this.levelText.setText(`${this.player.level}`);
     
-    // Update XP bar - thin line at bottom of screen
+    // Update XP bar - prominent bar at bottom of screen
     this.xpBar.clear();
     const xpPercent = this.player.getXPProgress();
-    const xpHeight = 3;
+    const xpHeight = this.isMobile ? 8 : 6; // Thicker for mobile
     const xpY = this.scale.height - xpHeight;
     
-    // XP fill only, no background
+    // XP bar background - dark with border
+    this.xpBar.fillStyle(0x333333, 0.8);
+    this.xpBar.fillRect(0, xpY, this.scale.width, xpHeight);
+    this.xpBar.lineStyle(1, 0x666666, 0.8);
+    this.xpBar.strokeRect(0, xpY, this.scale.width, xpHeight);
+    
+    // XP fill - bright cyan with glow effect
     if (xpPercent > 0) {
-      this.xpBar.fillStyle(0x00ffff, 0.8);
-      this.xpBar.fillRect(0, xpY, this.scale.width * xpPercent, xpHeight);
+      this.xpBar.fillStyle(0x00ffff, 1.0);
+      this.xpBar.fillRect(1, xpY + 1, (this.scale.width - 2) * xpPercent, xpHeight - 2);
     }
     
     // REMOVED - Keep UI minimal
@@ -315,21 +334,21 @@ export class GameScene extends Scene {
   }
 
   private createPauseButton(): void {
-    // Mobile-friendly pause button
-    const baseSize = this.isMobile ? 56 : 30; // Much larger for mobile
-    const padding = this.isMobile ? 24 : 16; // More padding on mobile
+    // Mobile-friendly pause button with better positioning
+    const baseSize = this.isMobile ? 64 : 30; // Even larger for mobile
+    const padding = this.isMobile ? 32 : 16; // More padding on mobile
     
-    // Position with safe area consideration for mobile
-    const safeAreaTop = this.isMobile ? 40 : 0; // Account for notches
+    // Position with generous safe area consideration for mobile
+    const safeAreaTop = this.isMobile ? 50 : 0; // Account for notches and status bar
     const xPos = this.scale.width - padding - baseSize/2;
     const yPos = padding + baseSize/2 + safeAreaTop;
     
     this.pauseButton = this.add.container(xPos, yPos);
     
-    // Larger invisible hit area for easier tapping
-    const hitAreaSize = this.isMobile ? baseSize * 1.2 : baseSize; // 20% larger hit area on mobile
-    const hitArea = this.add.circle(0, 0, hitAreaSize/2, 0x000000, 0);
-    hitArea.setInteractive({ useHandCursor: !this.isMobile });
+    // Much larger invisible hit area for easier tapping
+    const hitAreaSize = this.isMobile ? baseSize * 1.5 : baseSize; // 50% larger hit area on mobile
+    this.pauseButtonHitArea = this.add.circle(0, 0, hitAreaSize/2, 0x000000, 0);
+    this.pauseButtonHitArea.setInteractive({ useHandCursor: !this.isMobile });
     
     // Background circle for better visibility on mobile
     if (this.isMobile) {
@@ -351,37 +370,90 @@ export class GameScene extends Scene {
     graphics.fillRect(-lineSpacing, -lineHeight/2, lineWidth, lineHeight);
     graphics.fillRect(lineSpacing - lineWidth, -lineHeight/2, lineWidth, lineHeight);
     
-    this.pauseButton.add([hitArea, graphics]);
+    this.pauseButton.add([this.pauseButtonHitArea, graphics]);
     this.pauseButton.setScrollFactor(0);
-    this.pauseButton.setDepth(102);
+    this.pauseButton.setDepth(1000); // Highest possible depth for touch priority
     this.pauseButton.setAlpha(this.isMobile ? 0.8 : 0.5);
     
-    // Enhanced button interactions for mobile
-    hitArea.on('pointerover', () => {
-      this.pauseButton.setAlpha(1);
-    });
+    // Set up pause button events
+    this.setupPauseButtonEvents();
     
-    hitArea.on('pointerout', () => {
-      this.pauseButton.setAlpha(this.isMobile ? 0.8 : 0.5);
-    });
-    
-    hitArea.on('pointerdown', () => {
-      // Add visual feedback for tap
-      this.pauseButton.setScale(0.9);
-      this.pauseGame();
-    });
-    
-    hitArea.on('pointerup', () => {
-      this.pauseButton.setScale(1);
-    });
-    
-    // ESC key handler
+    // ESC key handler - only set up once
+    this.input.keyboard!.off('keydown-ESC'); // Remove any existing handlers
     this.input.keyboard!.on('keydown-ESC', () => {
       this.pauseGame();
     });
   }
   
+  private setupPauseButtonEvents(): void {
+    // Clear any existing events
+    this.pauseButtonHitArea.removeAllListeners();
+    
+    // Remove scene-level handlers to avoid duplicates
+    this.input.off('pointerdown', this.handlePauseButtonTouch, this);
+    
+    // Add scene-level pointer handler for highest priority
+    this.input.on('pointerdown', this.handlePauseButtonTouch, this);
+    
+    // Backup: Also set up object-level events
+    this.pauseButtonHitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      this.triggerPause(pointer);
+    });
+    
+    // Remove hover effects for mobile reliability
+    if (!this.isMobile) {
+      this.pauseButtonHitArea.on('pointerover', () => {
+        this.pauseButton.setAlpha(1);
+      });
+      
+      this.pauseButtonHitArea.on('pointerout', () => {
+        this.pauseButton.setAlpha(0.5);
+      });
+    }
+  }
+  
+  private handlePauseButtonTouch = (pointer: Phaser.Input.Pointer) => {
+    // Check if touch is within pause button area
+    const buttonX = this.pauseButton.x;
+    const buttonY = this.pauseButton.y;
+    const hitRadius = this.isMobile ? 48 : 24; // Match hit area size
+    
+    const distance = Math.sqrt(
+      Math.pow(pointer.x - buttonX, 2) + 
+      Math.pow(pointer.y - buttonY, 2)
+    );
+    
+    if (distance <= hitRadius) {
+      // Stop event propagation
+      pointer.event?.stopPropagation();
+      this.triggerPause(pointer);
+    }
+  }
+  
+  private triggerPause(pointer: Phaser.Input.Pointer): void {
+    // Prevent event bubbling
+    pointer.event?.stopPropagation();
+    
+    // Visual feedback
+    this.pauseButton.setAlpha(1);
+    this.pauseButton.setScale(0.9);
+    
+    // Immediate pause - no delay needed
+    this.pauseGame();
+    
+    // Reset visual state after a moment
+    this.time.delayedCall(100, () => {
+      this.pauseButton.setScale(1);
+      this.pauseButton.setAlpha(this.isMobile ? 0.8 : 0.5);
+    });
+  }
+  
   private pauseGame(): void {
+    // Disable virtual joystick to prevent interference
+    if (this.virtualJoystick) {
+      this.virtualJoystick.setEnabled(false);
+    }
+    
     // Collect current stats
     const stats = {
       survivalTime: this.survivalTime,

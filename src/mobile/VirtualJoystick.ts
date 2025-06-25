@@ -78,7 +78,7 @@ export class VirtualJoystick {
     this.touchZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.touchId === null) {
         // Check if touch is in UI exclusion zones (top-right for pause button)
-        const uiExclusionSize = 80; // Size of UI exclusion zone
+        const uiExclusionSize = 120; // Larger exclusion zone for better pause button access
         const screenWidth = this.scene.scale.width;
         const screenHeight = this.scene.scale.height;
         
@@ -223,6 +223,15 @@ export class VirtualJoystick {
 
   setOpacity(opacity: number): void {
     this.container.setAlpha(opacity);
+  }
+
+  setEnabled(enabled: boolean): void {
+    if (enabled) {
+      this.touchZone.setInteractive();
+    } else {
+      this.touchZone.disableInteractive();
+      this.release(); // Release any current touch
+    }
   }
 
   destroy(): void {
