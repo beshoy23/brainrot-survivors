@@ -16,7 +16,7 @@ export class CollisionSystem {
     // Clear and rebuild spatial grid
     this.spatialGrid.clear();
     enemies.forEach(enemy => {
-      if (enemy.sprite.active) {
+      if (enemy.sprite.active && !enemy.isDying) {
         this.spatialGrid.insert(enemy);
       }
     });
@@ -32,7 +32,7 @@ export class CollisionSystem {
     // VS-style damage: collect ALL colliding enemies, then apply damage globally
     const collidingEnemies: Enemy[] = [];
     for (const enemy of nearbyEnemies) {
-      if (this.checkCollision(player, enemy)) {
+      if (!enemy.isDying && this.checkCollision(player, enemy)) {
         collidingEnemies.push(enemy);
       }
     }
