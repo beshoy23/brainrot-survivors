@@ -130,9 +130,46 @@ src/
 - Memory usage under 50MB
 - Load time under 5 seconds
 
+## Deployment & CI/CD
+
+### Automatic Deployment
+- **GitHub Actions**: Automatic build and deploy on every push to master
+- **Asset Management**: All sprites and assets automatically included in builds
+- **Zero Manual Steps**: No need for manual deployment or asset synchronization
+- **Live Updates**: Changes appear at https://beshoy23.github.io/brainrot-survivors/ within minutes
+
+### Build Configuration
+- **Vite Build Tool**: Optimized production builds with asset bundling
+- **Public Assets**: Game sprites stored in `public/` for proper inclusion
+- **GitHub Pages**: Configured for workflow-based deployment
+- **Base Path**: Properly configured for GitHub Pages subdirectory
+
+## Current Implementation Status
+
+### ✅ Completed Features
+- **Player Character**: Animated warrior sprite with idle/run animations and proper scaling
+- **Diverse Enemies**: 5 distinct enemy types with unique visuals:
+  - Basic → Male zombies (red tint) with death animations
+  - Fast → Female zombies (cyan tint) with death animations  
+  - Tank → Black warriors (dark tint) with fade-out deaths
+  - Elite → Red lancers (purple tint) with fade-out deaths
+  - Swarm → Yellow monks (yellow tint) with fade-out deaths
+- **Visual Polish**: Proper depth layering, garlic aura below player, death animations
+- **Collision System**: Dying enemies don't damage player during death animations
+- **Weapon Effects**: Authentic VS-style garlic aura and whip slash visuals
+- **Performance**: Object pooling, spatial grid, 60 FPS with 200+ enemies
+- **Mobile Support**: Touch controls, responsive UI, mobile-optimized
+
+### 🎮 Gameplay Features
+- **Movement**: 8-directional WASD/arrow controls with mobile virtual joystick
+- **Combat**: Auto-attacking weapons (projectiles, garlic aura, whip)
+- **Progression**: XP collection, level-up upgrades, weapon evolution
+- **Balance**: VS-style scaling difficulty and upgrade system
+- **Audio**: Death sounds and weapon feedback
+
 ## Future Considerations
 - Save system for progress persistence
 - Leaderboards for competitive play
-- More weapon types and enemy varieties
-- Visual effects and particle systems
-- Sound effects and background music
+- Additional weapon types and enemy varieties
+- Enhanced visual effects and particle systems
+- Extended sound effects and background music
