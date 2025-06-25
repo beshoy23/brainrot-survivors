@@ -24,7 +24,8 @@ export interface IWeaponBehavior {
     projectilePool: PoolManager<Projectile>,
     damage: number,
     range: number,
-    player?: Player
+    player?: Player,
+    weaponEffectSystem?: any
   ): ProjectileFire[];
   
   // Get valid targets for this weapon

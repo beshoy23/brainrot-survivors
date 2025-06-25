@@ -5,9 +5,10 @@ import { Player } from '../../entities/Player';
 import { Projectile } from '../../entities/Projectile';
 import { PoolManager } from '../../managers/PoolManager';
 
-// VS-style Whip - creates wide horizontal projectile
+// VS-style Whip - creates wide horizontal slash effect
 export class WhipBehavior implements IWeaponBehavior {
   private lastDirection: number = 1; // 1 for right, -1 for left
+  private lastFireTime: number = 0;
   
   constructor(
     private whipLength: number = 150,
@@ -20,42 +21,59 @@ export class WhipBehavior implements IWeaponBehavior {
     projectilePool: PoolManager<Projectile>,
     damage: number,
     range: number,
-    player?: Player
+    player?: Player,
+    weaponEffectSystem?: any
   ): ProjectileFire[] {
+    const currentTime = Date.now();
+    
     // Alternate whip direction
     this.lastDirection *= -1;
     
-    const projectiles: ProjectileFire[] = [];
+    // Create visual slash effect
+    if (weaponEffectSystem && player) {
+      weaponEffectSystem.createWhipSlash(player, this.lastDirection, this.whipLength);
+    }
     
-    // Create multiple projectiles to form whip shape
-    for (let i = 0; i < this.projectileCount; i++) {
+    this.lastFireTime = currentTime;
+    
+    // Find enemies in the slash area
+    const enemiesHit = enemies.filter(enemy => {
+      if (!enemy.sprite.active) return false;
+      
+      const relativeX = enemy.x - position.x;
+      const relativeY = enemy.y - position.y;
+      
+      // Check if enemy is in the arc area
+      const distance = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
+      if (distance > this.whipLength || distance < 20) return false;
+      
+      // Check angle - whip covers 90 degree arc
+      const angle = Math.atan2(relativeY, relativeX);
+      const targetAngle = this.lastDirection > 0 ? 0 : Math.PI; // 0 for right, PI for left
+      const angleDiff = Math.abs(angle - targetAngle);
+      
+      return angleDiff < Math.PI / 4; // 45 degrees on each side
+    });
+    
+    // Create invisible projectiles for hit detection
+    const projectiles: ProjectileFire[] = [];
+    enemiesHit.forEach(enemy => {
       const projectile = projectilePool.acquire();
-      
-      // Spread projectiles vertically to create whip width
-      const verticalOffset = (i - (this.projectileCount - 1) / 2) * 20;
-      
-      // Whip spawns at strike position, moves slightly forward
-      const startX = position.x + (this.lastDirection * this.whipLength * 0.5);
-      const startY = position.y + verticalOffset;
-      const targetX = position.x + (this.lastDirection * this.whipLength);
-      const targetY = position.y + verticalOffset;
-      
       projectiles.push({
         projectile,
-        startX,
-        startY,
-        targetX,
-        targetY,
-        speed: 1200, // Very fast for instant feel
+        startX: enemy.x,
+        startY: enemy.y,
+        targetX: enemy.x,
+        targetY: enemy.y,
+        speed: 0,
         visuals: {
-          color: 0xFFFFFF, // White
-          shape: 'rectangle',
-          size: 6,
-          width: 30,
-          height: 6
+          color: 0xFFFFFF,
+          shape: 'circle',
+          size: 1,
+          alpha: 0 // Invisible - just for damage
         }
       });
-    }
+    });
     
     return projectiles;
   }

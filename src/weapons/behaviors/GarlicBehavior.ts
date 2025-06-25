@@ -5,11 +5,15 @@ import { Player } from '../../entities/Player';
 import { Projectile } from '../../entities/Projectile';
 import { PoolManager } from '../../managers/PoolManager';
 
-// VS-style Garlic - creates stationary area projectiles around player
+// VS-style Garlic - creates persistent aura around player
 export class GarlicBehavior implements IWeaponBehavior {
+  private auraActive: boolean = false;
+  private lastDamageTime: number = 0;
+  private damageInterval: number = 500; // Damage every 500ms
+  
   constructor(
     private radius: number = 100,
-    private projectileCount: number = 8
+    private projectileCount: number = 8 // Not used anymore but kept for compatibility
   ) {}
   
   fire(
@@ -18,39 +22,53 @@ export class GarlicBehavior implements IWeaponBehavior {
     projectilePool: PoolManager<Projectile>,
     damage: number,
     range: number,
-    player?: Player
+    player?: Player,
+    weaponEffectSystem?: any
   ): ProjectileFire[] {
-    const projectiles: ProjectileFire[] = [];
+    const currentTime = Date.now();
     
-    // Create circular pattern of projectiles that follow player
-    for (let i = 0; i < this.projectileCount; i++) {
-      const angle = (Math.PI * 2 * i) / this.projectileCount;
+    // Create visual aura if not active
+    if (!this.auraActive && weaponEffectSystem) {
+      weaponEffectSystem.createGarlicAura(player, this.radius);
+      this.auraActive = true;
+    }
+    
+    // Check if it's time to deal damage
+    if (currentTime - this.lastDamageTime < this.damageInterval) {
+      return []; // No projectiles, just visual effect
+    }
+    
+    this.lastDamageTime = currentTime;
+    
+    // Find all enemies within radius and damage them directly
+    const enemiesInRange = enemies.filter(enemy => {
+      if (!enemy.sprite.active) return false;
+      const distance = Math.sqrt(
+        Math.pow(enemy.x - position.x, 2) + 
+        Math.pow(enemy.y - position.y, 2)
+      );
+      return distance <= this.radius;
+    });
+    
+    // Create invisible damage projectiles for hit detection
+    const projectiles: ProjectileFire[] = [];
+    enemiesInRange.forEach(enemy => {
       const projectile = projectilePool.acquire();
-      
-      // Position projectiles in a circle around player
-      const offsetX = Math.cos(angle) * (this.radius * 0.7);
-      const offsetY = Math.sin(angle) * (this.radius * 0.7);
-      
-      // Projectiles spawn AT circle position and follow player
-      const spawnX = position.x + offsetX;
-      const spawnY = position.y + offsetY;
-      
       projectiles.push({
         projectile,
-        startX: spawnX,
-        startY: spawnY,
-        targetX: spawnX, // Same as start (stationary)
-        targetY: spawnY,
-        speed: 0, // No movement
-        liveTarget: player, // Follow the player object directly
+        startX: enemy.x,
+        startY: enemy.y,
+        targetX: enemy.x,
+        targetY: enemy.y,
+        speed: 0,
         visuals: {
-          color: 0x9B30FF, // Purple
+          color: 0x9B30FF,
           shape: 'circle',
-          size: 12,
-          alpha: 0.6 // Transparent for aura effect
+          size: 1,
+          alpha: 0 // Invisible - just for damage
         }
       });
-    }
+    });
     
     return projectiles;
   }

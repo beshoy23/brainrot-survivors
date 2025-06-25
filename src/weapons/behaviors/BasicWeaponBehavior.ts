@@ -12,7 +12,8 @@ export class BasicWeaponBehavior implements IWeaponBehavior {
     projectilePool: PoolManager<Projectile>,
     damage: number,
     range: number,
-    player?: Player
+    player?: Player,
+    weaponEffectSystem?: any
   ): ProjectileFire[] {
     const targets = this.getTargets(position, enemies, range, 1);
     if (targets.length === 0) return [];

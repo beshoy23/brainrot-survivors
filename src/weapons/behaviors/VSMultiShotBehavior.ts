@@ -15,7 +15,8 @@ export class VSMultiShotBehavior implements IWeaponBehavior {
     projectilePool: PoolManager<Projectile>,
     damage: number,
     range: number,
-    player?: Player
+    player?: Player,
+    weaponEffectSystem?: any
   ): ProjectileFire[] {
     const shotCount = 1 + this.additionalShots;
     const projectiles: ProjectileFire[] = [];

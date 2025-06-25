@@ -5,6 +5,7 @@ import { SpawnSystem } from '../systems/SpawnSystem';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { WeaponSystem } from '../systems/WeaponSystem';
 import { PickupSystem } from '../systems/PickupSystem';
+import { WeaponEffectSystem } from '../systems/WeaponEffectSystem';
 import { GameConfig } from '../config/game';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { WeaponFactory } from '../weapons/WeaponFactory';
@@ -22,6 +23,7 @@ export class GameScene extends Scene {
   private collisionSystem!: CollisionSystem;
   private weaponSystem!: WeaponSystem;
   private pickupSystem!: PickupSystem;
+  private weaponEffectSystem!: WeaponEffectSystem;
   
   // UI elements
   private healthBar!: Phaser.GameObjects.Graphics;
@@ -81,6 +83,10 @@ export class GameScene extends Scene {
     this.collisionSystem = new CollisionSystem(worldWidth, worldHeight);
     this.weaponSystem = new WeaponSystem(this);
     this.pickupSystem = new PickupSystem(this);
+    this.weaponEffectSystem = new WeaponEffectSystem(this);
+    
+    // Connect weapon effect system to weapon system
+    this.weaponSystem.setWeaponEffectSystem(this.weaponEffectSystem);
     
     // Initialize audio
     this.soundManager = new SoundManager(this);
@@ -160,8 +166,8 @@ export class GameScene extends Scene {
     rt.setOrigin(0, 0);
     rt.setDepth(-15);
     
-    // Use larger tiles for efficiency
-    const tileSize = 64; // Larger tiles = better performance
+    // Use smaller tiles for better detail density
+    const tileSize = 32; // Smaller tiles = more detail
     const tilesX = Math.ceil(worldWidth / tileSize);
     const tilesY = Math.ceil(worldHeight / tileSize);
     
@@ -202,6 +208,21 @@ export class GameScene extends Scene {
     
     // Draw details layer
     this.drawCachedDetails(tempGraphics, tilesX, tilesY, tileSize, noiseCache);
+    rt.draw(tempGraphics);
+    tempGraphics.clear();
+    
+    // Draw medium details layer (8-16 pixel features)
+    this.drawMediumDetails(tempGraphics, tilesX, tilesY, tileSize, noiseCache);
+    rt.draw(tempGraphics);
+    tempGraphics.clear();
+    
+    // Draw fine details layer (2-4 pixel features)
+    this.drawFineDetails(tempGraphics, tilesX, tilesY, tileSize, noiseCache);
+    rt.draw(tempGraphics);
+    tempGraphics.clear();
+    
+    // Draw ambient effects layer (shadows, light patches)
+    this.drawAmbientEffects(tempGraphics, tilesX, tilesY, tileSize, noiseCache);
     rt.draw(tempGraphics);
     
     // Clean up temporary graphics
@@ -281,8 +302,8 @@ export class GameScene extends Scene {
         const idx = y * tilesX + x;
         const detail = cache.detail[idx];
         
-        // Only spawn if detail noise is high
-        if (detail < 0.8) continue;
+        // Lower threshold for more details
+        if (detail < 0.5) continue; // 50% chance instead of 20%
         
         const elevation = cache.elevation[idx];
         const biome = cache.biome[idx];
@@ -294,23 +315,200 @@ export class GameScene extends Scene {
         graphics.save();
         graphics.translateCanvas(worldX, worldY);
         
-        // Draw appropriate detail
-        if (biome > 0.6 && elevation > 0.5) {
-          // Rocks
-          graphics.fillStyle(0x8a7a6a, 0.6 + elevation * 0.3);
-          const size = 4 + elevation * 8;
-          graphics.fillCircle(0, 0, size);
-        } else if (biome < 0.3 && elevation > 0.4) {
-          // Puddles
-          graphics.fillStyle(0x4a6a6a, 0.5 + elevation * 0.3);
-          graphics.fillRect(-4, -3, 8, 6);
-        } else if (elevation > 0.6) {
-          // Debris
-          graphics.lineStyle(2, 0x7a7a7a, 0.7);
-          graphics.strokeCircle(0, 0, 3);
+        // Draw appropriate detail with more variety
+        if (biome > 0.6) {
+          // Rocky biome details
+          if (detail > 0.8 && elevation > 0.5) {
+            // Large rocks
+            graphics.fillStyle(0x8a7a6a, 0.6 + elevation * 0.3);
+            const size = 4 + elevation * 8;
+            graphics.fillCircle(0, 0, size);
+            // Shadow
+            graphics.fillStyle(0x000000, 0.15);
+            graphics.fillEllipse(2, size, size * 1.2, size * 0.4);
+          } else if (detail > 0.65) {
+            // Medium stones
+            graphics.fillStyle(0x7a6a5a, 0.5);
+            for (let i = 0; i < 2; i++) {
+              graphics.fillCircle(i * 4 - 2, i * 2 - 1, 2 + i);
+            }
+          } else {
+            // Small pebbles
+            graphics.fillStyle(0x6a5a4a, 0.4);
+            graphics.fillCircle(0, 0, 1);
+            graphics.fillCircle(2, -1, 1.5);
+          }
+        } else if (biome < 0.3) {
+          // Wet biome details
+          if (detail > 0.8 && elevation > 0.4) {
+            // Puddles
+            graphics.fillStyle(0x4a6a8a, 0.5 + elevation * 0.3);
+            graphics.fillEllipse(0, 0, 8, 6);
+            // Reflection
+            graphics.fillStyle(0x6a8aaa, 0.3);
+            graphics.fillEllipse(-2, -2, 3, 2);
+          } else if (detail > 0.65) {
+            // Water plants
+            graphics.fillStyle(0x3a5a4a, 0.6);
+            graphics.fillRect(-1, -3, 2, 6);
+            graphics.fillCircle(0, -4, 2);
+          } else {
+            // Wet spots
+            graphics.fillStyle(0x5a7a8a, 0.3);
+            graphics.fillCircle(0, 0, 3);
+          }
+        } else {
+          // Standard biome details
+          if (detail > 0.8 && elevation > 0.6) {
+            // Grass patches
+            graphics.fillStyle(0x4a6a4a, 0.5);
+            for (let i = 0; i < 3; i++) {
+              const x = i * 2 - 2;
+              graphics.fillRect(x, -2, 1, 4);
+            }
+          } else if (detail > 0.65) {
+            // Small vegetation
+            graphics.fillStyle(0x5a7a5a, 0.4);
+            graphics.fillCircle(0, 0, 2);
+            graphics.fillStyle(0x6a8a6a, 0.3);
+            graphics.fillCircle(1, -1, 1.5);
+          } else {
+            // Dirt spots
+            graphics.fillStyle(0x5a4a3a, 0.3);
+            graphics.fillEllipse(0, 0, 4, 2);
+          }
         }
         
         graphics.restore();
+      }
+    }
+  }
+  
+  private drawMediumDetails(graphics: Phaser.GameObjects.Graphics, tilesX: number, tilesY: number,
+                           tileSize: number, cache: any): void {
+    // Medium-scale details for visual richness
+    for (let x = 0; x < tilesX; x += 2) { // Every other tile for performance
+      for (let y = 0; y < tilesY; y += 2) {
+        const idx = y * tilesX + x;
+        const detail = cache.detail[idx];
+        const elevation = cache.elevation[idx];
+        const biome = cache.biome[idx];
+        
+        // Medium detail threshold
+        if (detail < 0.35 || detail > 0.65) continue;
+        
+        const worldX = x * tileSize + tileSize;
+        const worldY = y * tileSize + tileSize;
+        
+        graphics.save();
+        graphics.translateCanvas(worldX, worldY);
+        
+        // Draw medium-scale features
+        if (biome > 0.6 && elevation > 0.5) {
+          // Rocky outcroppings
+          graphics.fillStyle(0x7a6a5a, 0.4);
+          graphics.beginPath();
+          graphics.moveTo(-8, 4);
+          graphics.lineTo(-4, -8);
+          graphics.lineTo(6, -6);
+          graphics.lineTo(8, 2);
+          graphics.lineTo(2, 8);
+          graphics.closePath();
+          graphics.fill();
+        } else if (biome < 0.3) {
+          // Mud patches
+          graphics.fillStyle(0x4a3a2a, 0.35);
+          graphics.fillEllipse(0, 0, 12, 8);
+          graphics.fillStyle(0x5a4a3a, 0.25);
+          graphics.fillEllipse(4, 3, 8, 6);
+        } else {
+          // Grass clumps
+          graphics.fillStyle(0x4a5a3a, 0.4);
+          for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2;
+            const dist = 6 + Math.random() * 3;
+            graphics.fillRect(
+              Math.cos(angle) * dist - 1,
+              Math.sin(angle) * dist - 3,
+              2, 6
+            );
+          }
+        }
+        
+        graphics.restore();
+      }
+    }
+  }
+  
+  private drawFineDetails(graphics: Phaser.GameObjects.Graphics, tilesX: number, tilesY: number,
+                         tileSize: number, cache: any): void {
+    // Fine details for texture and depth
+    const dotSize = 1.5;
+    
+    for (let x = 0; x < tilesX; x += 3) { // Every third tile
+      for (let y = 0; y < tilesY; y += 3) {
+        const idx = y * tilesX + x;
+        const detail = cache.detail[idx];
+        const biome = cache.biome[idx];
+        
+        if (detail < 0.3) continue;
+        
+        const baseX = x * tileSize;
+        const baseY = y * tileSize;
+        
+        // Scatter fine details within tile
+        for (let i = 0; i < 4; i++) {
+          const offsetX = Math.random() * tileSize;
+          const offsetY = Math.random() * tileSize;
+          
+          if (biome > 0.7) {
+            // Sand/dust particles
+            graphics.fillStyle(0xC4A484, 0.2 + detail * 0.2);
+            graphics.fillCircle(baseX + offsetX, baseY + offsetY, dotSize);
+          } else if (biome < 0.2) {
+            // Water droplets
+            graphics.fillStyle(0x7a9aaa, 0.3);
+            graphics.fillCircle(baseX + offsetX, baseY + offsetY, dotSize * 0.8);
+          } else {
+            // Dirt specks
+            graphics.fillStyle(0x5a4a3a, 0.25);
+            graphics.fillRect(baseX + offsetX, baseY + offsetY, dotSize, dotSize);
+          }
+        }
+      }
+    }
+  }
+  
+  private drawAmbientEffects(graphics: Phaser.GameObjects.Graphics, tilesX: number, tilesY: number,
+                            tileSize: number, cache: any): void {
+    // Large-scale ambient lighting and shadows
+    const lightSize = tileSize * 4;
+    
+    for (let x = 0; x < tilesX; x += 8) { // Large spacing
+      for (let y = 0; y < tilesY; y += 8) {
+        const idx = y * tilesX + x;
+        const elevation = cache.elevation[idx];
+        const detail = cache.detail[idx];
+        
+        const centerX = x * tileSize + lightSize / 2;
+        const centerY = y * tileSize + lightSize / 2;
+        
+        if (elevation > 0.7 && detail > 0.6) {
+          // Bright spots on high ground - use multiple circles for gradient effect
+          for (let r = lightSize; r > 0; r -= lightSize / 8) {
+            const alpha = 0.1 * (1 - r / lightSize);
+            graphics.fillStyle(0xffffcc, alpha);
+            graphics.fillCircle(centerX, centerY, r);
+          }
+        } else if (elevation < 0.4) {
+          // Dark shadows in low areas - use multiple circles
+          const shadowSize = lightSize * 0.8;
+          for (let r = shadowSize; r > 0; r -= shadowSize / 6) {
+            const alpha = 0.15 * (1 - r / shadowSize);
+            graphics.fillStyle(0x000000, alpha);
+            graphics.fillCircle(centerX, centerY, r);
+          }
+        }
       }
     }
   }
@@ -337,6 +535,7 @@ export class GameScene extends Scene {
     this.spawnSystem.update(this.survivalTime, this.player.getPosition());
     this.collisionSystem.update(this.accumulatedTime, this.player, enemies);
     this.weaponSystem.update(delta, this.accumulatedTime, this.player, enemies);
+    this.weaponEffectSystem.update(delta, this.player);
     
     // Update pickups and check for level up
     const xpCollected = this.pickupSystem.update(delta, this.player);

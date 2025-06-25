@@ -8,6 +8,7 @@ import { WeaponFactory } from '../weapons/WeaponFactory';
 import { MultiShotBehavior } from '../weapons/behaviors/MultiShotBehavior';
 import { VSMultiShotBehavior } from '../weapons/behaviors/VSMultiShotBehavior';
 import { Vector2 } from '../utils/Vector2';
+import { WeaponEffectSystem } from './WeaponEffectSystem';
 
 export interface EnemyDeathCallback {
   (x: number, y: number): void;
@@ -23,6 +24,7 @@ export class WeaponSystem {
   private activeProjectiles: Set<Projectile> = new Set();
   public onEnemyDeath?: EnemyDeathCallback;
   public onDamageDealt?: DamageDealtCallback;
+  private weaponEffectSystem?: WeaponEffectSystem;
 
   constructor(private scene: Scene) {
     // Initialize projectile pool
@@ -34,6 +36,10 @@ export class WeaponSystem {
     
     // Create starter weapon
     this.addWeapon(WeaponFactory.createStarterWeapon());
+  }
+  
+  setWeaponEffectSystem(effectSystem: WeaponEffectSystem): void {
+    this.weaponEffectSystem = effectSystem;
   }
 
   addWeapon(weapon: Weapon): void {
@@ -136,7 +142,8 @@ export class WeaponSystem {
         this.projectilePool,
         weapon.getDamage(),
         weapon.range,
-        player
+        player,
+        this.weaponEffectSystem
       );
       
       // Fire each projectile
