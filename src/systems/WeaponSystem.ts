@@ -82,9 +82,23 @@ export class WeaponSystem {
           const dy = projectile.y - enemy.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           
-          if (distance < 15) { // Hit radius
+          // Use actual enemy hitbox radius + projectile radius (default 5)
+          const projectileRadius = projectile.radius || 5;
+          const collisionDistance = enemy.hitboxRadius + projectileRadius;
+          
+          if (distance < collisionDistance) {
+            // Validate damage is a valid number
+            const damage = isNaN(projectile.damage) || !isFinite(projectile.damage) 
+              ? 0 : projectile.damage;
+            
+            if (damage <= 0) {
+              console.warn('Invalid projectile damage:', projectile.damage);
+              projectilesToRemove.push(projectile);
+              return; // Use return instead of continue in forEach
+            }
+            
             const wasDying = enemy.isDying;
-            const isDead = enemy.takeDamage(projectile.damage);
+            const isDead = enemy.takeDamage(damage);
             
             // Only create damage number and callbacks if enemy wasn't already dying
             if (!wasDying) {

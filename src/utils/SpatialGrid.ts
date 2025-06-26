@@ -2,6 +2,8 @@ export interface GridEntity {
   x: number;
   y: number;
   id: string;
+  // Optional radius for entities that span multiple cells
+  radius?: number;
 }
 
 export class SpatialGrid<T extends GridEntity> {
@@ -33,17 +35,40 @@ export class SpatialGrid<T extends GridEntity> {
     const cells = this.entityCells.get(entity.id);
     if (!cells) return;
     
-    // Remove from all cells
+    // Remove from all cells and clean up empty Sets
     for (const cell of cells) {
-      this.grid.get(cell)?.delete(entity);
+      const cellSet = this.grid.get(cell);
+      if (cellSet) {
+        cellSet.delete(entity);
+        // Clean up empty Sets to prevent memory leak
+        if (cellSet.size === 0) {
+          this.grid.delete(cell);
+        }
+      }
     }
     
     this.entityCells.delete(entity.id);
   }
 
   update(entity: T): void {
+    // Store current position to ensure consistency
+    const currentX = entity.x;
+    const currentY = entity.y;
+    const currentRadius = entity.radius;
+    
+    // Remove from old position
     this.remove(entity);
-    this.insert(entity);
+    
+    // Create a temporary entity snapshot to prevent position changes during insert
+    const snapshot = {
+      ...entity,
+      x: currentX,
+      y: currentY,
+      radius: currentRadius
+    };
+    
+    // Insert using the snapshot position
+    this.insert(snapshot as T);
   }
 
   getNearby(x: number, y: number, radius: number): T[] {
@@ -66,9 +91,30 @@ export class SpatialGrid<T extends GridEntity> {
   }
 
   private getCellsForEntity(entity: T): string[] {
-    const x = Math.floor(entity.x / this.cellSize);
-    const y = Math.floor(entity.y / this.cellSize);
-    return [this.getCellKey(x, y)];
+    // If entity has a radius, it may span multiple cells
+    const radius = entity.radius || 0;
+    
+    if (radius === 0) {
+      // Point entity - single cell
+      const x = Math.floor(entity.x / this.cellSize);
+      const y = Math.floor(entity.y / this.cellSize);
+      return [this.getCellKey(x, y)];
+    }
+    
+    // Entity with radius - calculate all cells it overlaps
+    const cells: string[] = [];
+    const minX = Math.floor((entity.x - radius) / this.cellSize);
+    const maxX = Math.floor((entity.x + radius) / this.cellSize);
+    const minY = Math.floor((entity.y - radius) / this.cellSize);
+    const maxY = Math.floor((entity.y + radius) / this.cellSize);
+    
+    for (let cx = minX; cx <= maxX; cx++) {
+      for (let cy = minY; cy <= maxY; cy++) {
+        cells.push(this.getCellKey(cx, cy));
+      }
+    }
+    
+    return cells;
   }
 
   private getCellsInRadius(x: number, y: number, radius: number): string[] {

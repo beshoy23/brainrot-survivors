@@ -646,8 +646,9 @@ export class GameScene extends Scene {
     this.healthBar.setScrollFactor(0);
     this.healthBar.setDepth(100);
     
-    // HP Text - small and clean
-    this.healthText = this.add.text(padding, padding, '', {
+    // HP Text - small and clean with safe area support
+    const safeAreaTop = this.isMobile ? MobileConfig.ui.safeAreaInsets.top : 0;
+    this.healthText = this.add.text(padding, padding + safeAreaTop, '', {
       fontSize: fontSize,
       color: '#ffffff',
       fontFamily: 'monospace'
@@ -701,12 +702,13 @@ export class GameScene extends Scene {
     // Clean, minimal UI updates
     const padding = 16;
     
-    // Update health bar - prominent bar under HP text
+    // Update health bar - prominent bar under HP text with safe area support
     this.healthBar.clear();
     const healthPercent = this.player.health / this.player.maxHealth;
     const barWidth = this.isMobile ? 120 : 100;
     const barHeight = this.isMobile ? 6 : 4;
-    const barY = padding + 22;
+    const safeAreaTop = this.isMobile ? MobileConfig.ui.safeAreaInsets.top : 0;
+    const barY = padding + 22 + safeAreaTop;
     
     // HP bar background - dark with border
     this.healthBar.fillStyle(0x333333, 0.8);
@@ -734,11 +736,14 @@ export class GameScene extends Scene {
     // Level display - just the number
     this.levelText.setText(`${this.player.level}`);
     
-    // Update XP bar - prominent bar at bottom of screen
+    // Update XP bar - prominent bar at bottom of screen with safe area support
     this.xpBar.clear();
     const xpPercent = this.player.getXPProgress();
-    const xpHeight = this.isMobile ? 8 : 6; // Thicker for mobile
-    const xpY = this.scale.height - xpHeight;
+    const xpHeight = this.isMobile ? MobileConfig.ui.xpBarHeight : 6;
+    
+    // Account for mobile safe area bottom inset
+    const safeAreaBottom = this.isMobile ? MobileConfig.ui.safeAreaInsets.bottom : 0;
+    const xpY = this.scale.height - xpHeight - safeAreaBottom;
     
     // XP bar background - dark with border
     this.xpBar.fillStyle(0x333333, 0.8);

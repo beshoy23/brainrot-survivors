@@ -25,12 +25,25 @@ export class Weapon {
   }
   
   canFire(currentTime: number): boolean {
+    // Validate inputs
+    if (isNaN(currentTime) || !isFinite(currentTime)) {
+      console.error('Invalid currentTime in canFire:', currentTime);
+      return false;
+    }
+    
     // Apply fire rate multiplier from upgrades
     const upgradeManager = (window as any).upgradeManager;
-    const fireRateMultiplier = upgradeManager ? 
+    const fireRateMultiplier = upgradeManager && upgradeManager.getUpgradeLevel ? 
       (1 + (upgradeManager.getUpgradeLevel('fireRate') * 0.15)) : 1;
     
     const actualFireRate = this.fireRate * fireRateMultiplier;
+    
+    // Prevent division by zero or negative fire rates
+    if (actualFireRate <= 0 || !isFinite(actualFireRate)) {
+      console.warn('Invalid fire rate:', actualFireRate);
+      return false; // Can't fire with invalid rate
+    }
+    
     const fireInterval = 1000 / actualFireRate;
     return currentTime - this.lastFireTime >= fireInterval;
   }
@@ -42,7 +55,7 @@ export class Weapon {
   getDamage(): number {
     // Apply damage multiplier from upgrades
     const upgradeManager = (window as any).upgradeManager;
-    const damageMultiplier = upgradeManager ? 
+    const damageMultiplier = upgradeManager && upgradeManager.getUpgradeLevel ? 
       (1 + (upgradeManager.getUpgradeLevel('damage') * 0.15)) : 1;
     
     return this.damage * damageMultiplier;

@@ -65,10 +65,17 @@ export class SpawnSystem {
     
     // Clean up dead enemies - but only if they're not playing death animation
     const enemies = this.getActiveEnemies();
+    const enemiesToRelease: Enemy[] = [];
+    
     enemies.forEach(enemy => {
       if (enemy.sprite.active && enemy.health <= 0 && !enemy.isDying) {
-        this.releaseEnemy(enemy);
+        enemiesToRelease.push(enemy);
       }
+    });
+    
+    // Release after iteration to avoid modifying collection during iteration
+    enemiesToRelease.forEach(enemy => {
+      this.releaseEnemy(enemy);
     });
   }
 
@@ -136,12 +143,31 @@ export class SpawnSystem {
     const enemy = this.enemyPool.acquire();
     
     // Calculate spawn position (off-screen)
-    const angle = Math.random() * Math.PI * 2;
-    const distance = Math.max(this.scene.scale.width, this.scene.scale.height) / 2 + 
-                    GameConfig.spawning.spawnDistance;
+    // Add small random offset to angle to prevent exact overlaps
+    const baseAngle = Math.random() * Math.PI * 2;
+    const angleOffset = (Math.random() - 0.5) * 0.1; // ±0.05 radians
+    const angle = baseAngle + angleOffset;
+    
+    // Ensure enemies spawn outside viewport regardless of player position
+    const screenRadius = Math.sqrt(
+      Math.pow(this.scene.scale.width / 2, 2) + 
+      Math.pow(this.scene.scale.height / 2, 2)
+    );
+    const minDistance = screenRadius + GameConfig.spawning.spawnDistance;
+    
+    // Add random distance variation to prevent clustering
+    const distanceVariation = Math.random() * 50; // 0-50 pixel variation
+    const distance = minDistance + distanceVariation;
     
     const x = playerPos.x + Math.cos(angle) * distance;
     const y = playerPos.y + Math.sin(angle) * distance;
+    
+    // Validate position is not NaN
+    if (isNaN(x) || isNaN(y)) {
+      console.error('Invalid spawn position:', { x, y, playerPos });
+      enemy.spawn(playerPos.x + 500, playerPos.y, enemyType); // Fallback position
+      return;
+    }
     
     // Apply progressive health scaling based on survival time
     const scaledEnemyType = this.applyHealthScaling(enemyType);

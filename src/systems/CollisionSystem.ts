@@ -15,18 +15,23 @@ export class CollisionSystem {
   update(currentTime: number, player: Player, enemies: Enemy[]): void {
     // Clear and rebuild spatial grid
     this.spatialGrid.clear();
+    let maxEnemyRadius = 0;
+    
     enemies.forEach(enemy => {
       if (enemy.sprite.active && !enemy.isDying) {
         this.spatialGrid.insert(enemy);
+        // Track the largest enemy radius we've seen
+        maxEnemyRadius = Math.max(maxEnemyRadius, enemy.hitboxRadius);
       }
     });
     
-    // Check collisions with player (use largest possible enemy radius)
-    const maxEnemyRadius = 24; // Tank enemy has largest hitbox
+    // Check collisions with player (use actual largest enemy radius)
+    // Add buffer for safety (in case of new enemy types)
+    const searchRadius = GameConfig.player.hitboxRadius + maxEnemyRadius + 10;
     const nearbyEnemies = this.spatialGrid.getNearby(
       player.sprite.x,
       player.sprite.y,
-      GameConfig.player.hitboxRadius + maxEnemyRadius
+      searchRadius
     );
     
     // VS-style damage: collect ALL colliding enemies, then apply damage globally

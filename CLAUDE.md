@@ -173,3 +173,70 @@ src/
 - Additional weapon types and enemy varieties
 - Enhanced visual effects and particle systems
 - Extended sound effects and background music
+
+## TODO: Improve Testing Strategy (High Priority)
+
+### Critical Gap: Platform-Specific UI Testing
+Today's XP bar mobile bug revealed a major testing blind spot. The bug wasn't caught because tests focus on logic, not visual positioning or platform-specific UI behavior.
+
+### Testing Strategy Improvements Needed:
+
+#### 1. Visual/UI Positioning Tests
+```typescript
+describe('Mobile UI Positioning', () => {
+  it('should position XP bar above safe area on mobile', () => {
+    const scene = new GameScene();
+    scene.isMobile = true;
+    scene.scale.height = 800;
+    scene.updateUI();
+    
+    // Verify XP bar Y position accounts for safe area
+    const expectedY = 800 - 20 - 20; // height - xpBarHeight - safeAreaBottom
+    expect(scene.xpBar.lastDrawY).toBe(expectedY);
+  });
+});
+```
+
+#### 2. Cross-Platform Configuration Tests
+- Test that MobileConfig values are actually used
+- Verify mobile vs desktop UI differences
+- Check safe area calculations work correctly
+
+#### 3. Viewport Boundary Tests
+```typescript
+it('should keep all UI elements within visible area on mobile', () => {
+  // Test XP bar doesn't go below visible area
+  // Test health bar doesn't go above visible area
+  // Test all UI elements stay within screen bounds
+});
+```
+
+#### 4. Device-Specific Tests
+- Test multiple device configurations (iPhone, Android, tablets)
+- Test different screen sizes and orientations
+- Test edge cases (very small screens, extreme aspect ratios)
+
+#### 5. Integration Tests with Real Browser
+- Use Playwright/Puppeteer for actual mobile viewport testing
+- Screenshot comparison for visual regression testing
+- Test on real devices or emulators
+
+#### 6. Configuration Validation Tests
+- Ensure all mobile config properties are defined and used
+- Test consistency between config files and implementation
+- Validate safe area usage across all components
+
+### Why Current Tests Missed This Bug:
+1. **No Visual/Rendering Tests** - Tests check logic, not UI positioning
+2. **Mock-Heavy Testing** - Real Phaser rendering never tested
+3. **Platform Isolation** - Tests run in Node.js, not browser environment
+4. **Missing Integration Tests** - No end-to-end mobile experience validation
+
+### Implementation Priority:
+1. Add UI positioning tests to existing components
+2. Create mobile-specific test suite
+3. Set up visual regression testing pipeline
+4. Add device-specific configuration tests
+5. Implement browser-based integration tests
+
+This gap in testing strategy allowed a critical mobile bug to reach production. UI positioning should be treated as testable behavior, not just visual polish.

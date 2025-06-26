@@ -15,6 +15,13 @@ export class UpgradeManager {
   static getInstance(): UpgradeManager {
     if (!UpgradeManager.instance) {
       UpgradeManager.instance = new UpgradeManager();
+      // Only freeze in production to allow test cleanup
+      if (process.env.NODE_ENV !== 'test') {
+        Object.defineProperty(UpgradeManager, 'instance', {
+          writable: false,
+          configurable: false
+        });
+      }
     }
     return UpgradeManager.instance;
   }
@@ -35,11 +42,26 @@ export class UpgradeManager {
     if (!this.canUpgrade(id)) return false;
     
     const currentLevel = this.getUpgradeLevel(id);
-    this.upgradeLevels.set(id, currentLevel + 1);
+    const newLevel = currentLevel + 1;
     
-    // Apply the upgrade effect
+    // Validate level is reasonable
+    if (newLevel < 0 || newLevel > 100) {
+      console.error('Invalid upgrade level:', newLevel);
+      return false;
+    }
+    
+    this.upgradeLevels.set(id, newLevel);
+    
+    // Apply the upgrade effect with error handling
     const upgrade = UPGRADES[id];
-    upgrade.effect(currentLevel + 1);
+    try {
+      upgrade.effect(newLevel);
+    } catch (error) {
+      console.error(`Failed to apply upgrade effect for ${id}:`, error);
+      // Rollback the level change
+      this.upgradeLevels.set(id, currentLevel);
+      return false;
+    }
     
     return true;
   }
@@ -72,7 +94,7 @@ export class UpgradeManager {
     
     // Select guaranteed weapon upgrades
     if (minWeaponUpgrades > 0) {
-      const shuffledWeaponUpgrades = [...allWeaponUpgrades].sort(() => Math.random() - 0.5);
+      const shuffledWeaponUpgrades = this.fisherYatesShuffle([...allWeaponUpgrades]);
       selectedUpgrades.push(...shuffledWeaponUpgrades.slice(0, minWeaponUpgrades));
     }
     
@@ -85,15 +107,16 @@ export class UpgradeManager {
         .filter(upgrade => !usedIds.has(upgrade.id));
       
       // Shuffle and take remaining slots
-      const shuffledRemaining = [...remainingOptions].sort(() => Math.random() - 0.5);
+      const shuffledRemaining = this.fisherYatesShuffle([...remainingOptions]);
       selectedUpgrades.push(...shuffledRemaining.slice(0, remainingSlots));
     }
     
-    // Final shuffle to randomize order while maintaining weapon guarantee
-    return selectedUpgrades.sort(() => Math.random() - 0.5);
+    // Use Fisher-Yates shuffle for unbiased randomization
+    return this.fisherYatesShuffle(selectedUpgrades);
   }
 
   getUpgradeStats(): Map<string, number> {
+    // Return a copy to prevent external modification
     return new Map(this.upgradeLevels);
   }
 
@@ -102,5 +125,16 @@ export class UpgradeManager {
     Object.keys(UPGRADES).forEach(id => {
       this.upgradeLevels.set(id, 0);
     });
+  }
+
+  private fisherYatesShuffle<T>(array: T[]): T[] {
+    const shuffled = [...array]; // Create a copy
+    
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    return shuffled;
   }
 }

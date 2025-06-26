@@ -16,6 +16,10 @@ export class Enemy {
   public id: string;
   public enemyType: EnemyTypeConfig;
   public hitboxRadius: number;
+  // Add x, y, radius getters for GridEntity interface
+  public get x(): number { return this.sprite.x; }
+  public get y(): number { return this.sprite.y; }
+  public get radius(): number { return this.hitboxRadius; }
   public movementType: 'homing' | 'straight'; // VS-style: swarm moves straight, others home
   public movementAngle: number; // For straight-line movement
   public spawnTime: number; // Track when spawned for despawning
@@ -546,7 +550,4 @@ export class Enemy {
       glowPhase: 0
     };
   }
-
-  get x(): number { return this.sprite.x; }
-  get y(): number { return this.sprite.y; }
 }
