@@ -152,11 +152,11 @@ describe('UpgradeManager - Potential Bugs', () => {
       
       const stats = upgradeManager.getUpgradeStats();
       
-      // External code can modify the internal state!
+      // External code tries to modify the internal state
       stats.set('damage', 999);
       
-      // Internal state corrupted
-      expect(upgradeManager.getUpgradeLevel('damage')).toBe(999);
+      // Fixed: internal state protected by defensive copy
+      expect(upgradeManager.getUpgradeLevel('damage')).toBe(1);
     });
 
     it('BUG: reset() doesnt reset weapon unlocks', () => {
@@ -182,12 +182,13 @@ describe('UpgradeManager - Potential Bugs', () => {
         throw new Error('Effect failed!');
       });
       
-      // This will throw and break the upgrade system
+      // Fixed: error handling prevents crashes
       expect(() => {
         upgradeManager.applyUpgrade('damage');
-      }).toThrow();
+      }).not.toThrow();
       
-      // No error handling - game crashes!
+      // Level should be rolled back
+      expect(upgradeManager.getUpgradeLevel('damage')).toBe(0);
     });
 
     it('BUG: effects are called with wrong level during concurrent upgrades', () => {

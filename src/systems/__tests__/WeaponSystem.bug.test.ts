@@ -22,6 +22,18 @@ describe('WeaponSystem - Potential Bugs', () => {
           setOrigin: jest.fn(),
           setDepth: jest.fn(),
           destroy: jest.fn()
+        }),
+        graphics: jest.fn().mockReturnValue({
+          setVisible: jest.fn(),
+          setActive: jest.fn(),
+          setPosition: jest.fn(),
+          setDepth: jest.fn(),
+          destroy: jest.fn(),
+          clear: jest.fn(),
+          fillStyle: jest.fn(),
+          fillCircle: jest.fn(),
+          strokeCircle: jest.fn(),
+          lineBetween: jest.fn()
         })
       },
       time: { delayedCall: jest.fn() },
