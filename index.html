@@ -9,7 +9,7 @@
   <title>Kick Chain Brawler</title>
   
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="/brainrot-survivors/manifest.json">
   
   <!-- PWA Meta Tags -->
   <meta name="application-name" content="Kick Chain Brawler">
@@ -20,13 +20,13 @@
   
   <!-- Apple PWA Meta Tags -->
   <meta name="apple-mobile-web-app-title" content="KickBrawler">
-  <link rel="apple-touch-icon" href="/patapim.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="/patapim.png">
-  <link rel="apple-touch-startup-image" href="/patapim.png">
+  <link rel="apple-touch-icon" href="/brainrot-survivors/patapim.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/brainrot-survivors/patapim.png">
+  <link rel="apple-touch-startup-image" href="/brainrot-survivors/patapim.png">
   
   <!-- Standard Icons -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/patapim.png">
-  <link rel="shortcut icon" href="/patapim.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/brainrot-survivors/patapim.png">
+  <link rel="shortcut icon" href="/brainrot-survivors/patapim.png">
   <style>
     * {
       margin: 0;
@@ -137,7 +137,7 @@
     // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/brainrot-survivors/sw.js')
           .then(registration => {
             console.log('🥋 Kick Brawler: Service Worker registered!', registration.scope);
             
