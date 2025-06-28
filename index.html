@@ -6,7 +6,27 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Brainrot Survivors</title>
+  <title>Kick Chain Brawler</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="application-name" content="Kick Chain Brawler">
+  <meta name="description" content="Physics-based brawler where you kick enemies into devastating chain reactions">
+  <meta name="theme-color" content="#FF6600">
+  <meta name="msapplication-TileColor" content="#000000">
+  <meta name="msapplication-navbutton-color" content="#FF6600">
+  
+  <!-- Apple PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-title" content="KickBrawler">
+  <link rel="apple-touch-icon" href="/patapim.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/patapim.png">
+  <link rel="apple-touch-startup-image" href="/patapim.png">
+  
+  <!-- Standard Icons -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/patapim.png">
+  <link rel="shortcut icon" href="/patapim.png">
   <style>
     * {
       margin: 0;
@@ -62,6 +82,46 @@
     ::-webkit-scrollbar {
       display: none;
     }
+    
+    /* PWA-specific improvements */
+    @media (display-mode: standalone) {
+      body {
+        /* Remove any margins when installed as PWA */
+        margin: 0;
+        padding: 0;
+      }
+      
+      /* Hide the install button when already installed */
+      .install-button {
+        display: none !important;
+      }
+    }
+    
+    /* Improved mobile touch targets */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+    }
+    
+    /* Prevent zoom on double-tap */
+    * {
+      touch-action: manipulation;
+    }
+    
+    /* Better text rendering on mobile */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    /* Optimized for gaming */
+    #game-container {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +133,177 @@
         e.preventDefault();
       }
     }, { passive: false });
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('🥋 Kick Brawler: Service Worker registered!', registration.scope);
+            
+            // Listen for updates
+            registration.addEventListener('updatefound', () => {
+              console.log('🔄 New version available!');
+            });
+          })
+          .catch(error => {
+            console.log('❌ Service Worker registration failed:', error);
+          });
+      });
+    }
+
+    // PWA Install Prompt
+    let deferredPrompt;
+    let installButton;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('🎮 Install prompt ready!');
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show custom install button
+      showInstallButton();
+    });
+
+    function showInstallButton() {
+      // Create install button if not exists
+      if (!installButton) {
+        installButton = document.createElement('button');
+        installButton.textContent = '📱 Install Game';
+        installButton.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 1000;
+          background: linear-gradient(45deg, #FF6600, #FF8800);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 25px;
+          font-weight: bold;
+          font-size: 14px;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+          transition: all 0.3s ease;
+          font-family: Arial, sans-serif;
+        `;
+        
+        installButton.addEventListener('mouseenter', () => {
+          installButton.style.transform = 'scale(1.05)';
+          installButton.style.boxShadow = '0 6px 20px rgba(255, 102, 0, 0.4)';
+        });
+        
+        installButton.addEventListener('mouseleave', () => {
+          installButton.style.transform = 'scale(1)';
+          installButton.style.boxShadow = '0 4px 15px rgba(255, 102, 0, 0.3)';
+        });
+        
+        installButton.addEventListener('click', installApp);
+        document.body.appendChild(installButton);
+      }
+      
+      installButton.style.display = 'block';
+      
+      // Auto-hide after 10 seconds
+      setTimeout(() => {
+        if (installButton && installButton.style.display !== 'none') {
+          installButton.style.opacity = '0.7';
+        }
+      }, 10000);
+    }
+
+    async function installApp() {
+      if (!deferredPrompt) return;
+      
+      installButton.textContent = '🎮 Installing...';
+      installButton.disabled = true;
+      
+      const { outcome } = await deferredPrompt.prompt();
+      console.log('🎯 Install outcome:', outcome);
+      
+      if (outcome === 'accepted') {
+        console.log('🎉 User installed the app!');
+        hideInstallButton();
+      } else {
+        console.log('❌ User dismissed install prompt');
+        installButton.textContent = '📱 Install Game';
+        installButton.disabled = false;
+      }
+      
+      deferredPrompt = null;
+    }
+
+    function hideInstallButton() {
+      if (installButton) {
+        installButton.style.display = 'none';
+      }
+    }
+
+    // Hide install button after successful install
+    window.addEventListener('appinstalled', () => {
+      console.log('🎉 App successfully installed!');
+      hideInstallButton();
+    });
+
+    // For iOS Safari - show manual install instructions
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    }
+
+    function isInStandaloneMode() {
+      return window.matchMedia('(display-mode: standalone)').matches || 
+             window.navigator.standalone === true;
+    }
+
+    // Show iOS install instructions if needed
+    if (isIOS() && !isInStandaloneMode()) {
+      setTimeout(() => {
+        if (!installButton || installButton.style.display === 'none') {
+          showIOSInstallMessage();
+        }
+      }, 5000);
+    }
+
+    function showIOSInstallMessage() {
+      const iosMessage = document.createElement('div');
+      iosMessage.innerHTML = `
+        <div style="
+          position: fixed;
+          bottom: 20px;
+          left: 20px;
+          right: 20px;
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 15px;
+          border-radius: 10px;
+          z-index: 1000;
+          text-align: center;
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        ">
+          <div style="margin-bottom: 10px;">🎮 <strong>Install Kick Chain Brawler!</strong></div>
+          <div style="margin-bottom: 10px;">Tap <strong>Share</strong> ↗️ then <strong>"Add to Home Screen"</strong> 📱</div>
+          <button onclick="this.parentElement.parentElement.remove()" style="
+            background: #FF6600;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+          ">Got it!</button>
+        </div>
+      `;
+      document.body.appendChild(iosMessage);
+      
+      // Auto-remove after 15 seconds
+      setTimeout(() => {
+        if (iosMessage.parentElement) {
+          iosMessage.remove();
+        }
+      }, 15000);
+    }
   </script>
   <script type="module" src="/src/main.ts"></script>
 </body>

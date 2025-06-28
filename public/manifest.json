@@ -1,0 +1,60 @@
+{
+  "name": "Kick Chain Brawler",
+  "short_name": "KickBrawler",
+  "description": "Physics-based brawler where you kick enemies into devastating chain reactions. Master the art of tactical positioning and combo multipliers!",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape-primary",
+  "background_color": "#000000",
+  "theme_color": "#FF6600",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/patapim.png",
+      "sizes": "any", 
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["games", "action", "entertainment"],
+  "screenshots": [
+    {
+      "src": "/patapim-attack.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Kick enemies into chain reactions"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Play",
+      "short_name": "Play",
+      "description": "Jump straight into the action",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/patapim.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "lang": "en-US",
+  "dir": "ltr"
+}
