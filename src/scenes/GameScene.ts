@@ -15,6 +15,12 @@ import { DeviceDetection } from '../mobile/DeviceDetection';
 import { MobileConfig, getMobileUIScale } from '../mobile/MobileConfig';
 import { SoundManager } from '../audio/SoundManager';
 import { NoiseGenerator } from '../utils/NoiseGenerator';
+import { ENEMY_TYPES } from '../config/enemyTypes';
+import { ScreenShake } from '../utils/ScreenShake';
+import { ParticleEffects } from '../utils/ParticleEffects';
+import { DiscoveryChest } from '../entities/DiscoveryChest';
+import { ProgressionBalanceTester } from '../tests/ProgressionBalanceTest';
+import { WeaponBalanceTester } from '../tests/WeaponBalanceTest';
 
 export class GameScene extends Scene {
   private player!: Player;
@@ -56,20 +62,34 @@ export class GameScene extends Scene {
   // Audio
   private soundManager!: SoundManager;
   
+  // Visual effects
+  private screenShake!: ScreenShake;
+  private particleEffects!: ParticleEffects;
+  
+  // Discovery objects
+  private discoveryChest?: DiscoveryChest;
+  
   constructor() {
     super({ key: 'GameScene' });
   }
 
   preload(): void {
-    // Load player warrior spritesheets
-    this.load.spritesheet('warrior-idle', 'warrior-idle.png', {
+    // Load player patapim spritesheets
+    this.load.spritesheet('patapim-idle', 'patapim-idle.png', {
       frameWidth: 192,
       frameHeight: 192
     });
-    this.load.spritesheet('warrior-run', 'warrior-run.png', {
+    this.load.spritesheet('patapim-run', 'patapim-run.png', {
       frameWidth: 192, 
       frameHeight: 192
     });
+    this.load.spritesheet('patapim-attack', 'patapim-attack.png', {
+      frameWidth: 192, 
+      frameHeight: 192
+    });
+    
+    // Load weapon textures
+    this.load.image('brbrattack1', 'brbrattack1.png');
     
     // Load zombie enemy spritesheets
     // Male Zombie (Basic/Tank/Elite Enemies)
@@ -171,10 +191,23 @@ export class GameScene extends Scene {
     // Initialize audio
     this.soundManager = new SoundManager(this);
     
+    // Initialize visual effects
+    this.screenShake = new ScreenShake(this);
+    this.particleEffects = new ParticleEffects(this);
+    
+    // Connect visual effects to weapon system
+    this.weaponSystem.setVisualEffects(this.screenShake, this.particleEffects);
+    
     // Set up weapon system callbacks
     this.weaponSystem.onEnemyDeath = (x: number, y: number) => {
       this.enemiesKilled++; // Track kills
+      
+      // SATISFYING KILL FEEDBACK!
+      this.screenShake.shake(3, 150); // Light screen shake
+      this.particleEffects.createDeathExplosion(x, y, 0xff0000);
+      this.particleEffects.createXPBurst(x, y);
       this.soundManager.play('death', { volume: 0.2 });
+      
       if (Math.random() <= GameConfig.progression.xpGemDropChance) {
         // VS-style: gems sit still until player approaches
         this.pickupSystem.spawnGem(x, y, 1);
@@ -216,6 +249,12 @@ export class GameScene extends Scene {
     this.survivalTime = 0;
     this.accumulatedTime = 0;
     
+    // EXPLOSIVE START: Spawn 3-4 enemies immediately for instant action
+    this.spawnInitialEnemies();
+    
+    // Create mysterious discovery chest for exploration hook
+    this.createDiscoveryChest(worldWidth, worldHeight);
+    
     // Set up scene resume handler to restore button functionality
     this.events.on('resume', () => {
       this.setupPauseButtonEvents();
@@ -226,6 +265,15 @@ export class GameScene extends Scene {
     });
     
     // Game scene initialization complete
+    
+    // Expose balance testing in development (browser console access)
+    if (typeof window !== 'undefined') {
+      (window as any).testProgression = () => ProgressionBalanceTester.quickBalanceCheck();
+      (window as any).testWeapons = () => WeaponBalanceTester.quickWeaponTest();
+      console.log('🧪 Balance testing available!');
+      console.log('  📈 testProgression() - Test XP and enemy balance');
+      console.log('  ⚔️ testWeapons() - Test weapon DPS and effectiveness');
+    }
   }
 
   private createInterestingBackground(worldWidth: number, worldHeight: number): void {
@@ -593,6 +641,39 @@ export class GameScene extends Scene {
     }
   }
   
+  private spawnInitialEnemies(): void {
+    // Spawn 3-4 enemies immediately around the player for instant action
+    const playerPos = this.player.getPosition();
+    const enemyCount = 3 + Math.floor(Math.random() * 2); // 3-4 enemies
+    
+    // Get basic enemy type for initial spawn
+    const basicEnemyType = ENEMY_TYPES.basic;
+    
+    for (let i = 0; i < enemyCount; i++) {
+      // Spawn at close but safe distance (visible but not overlapping)
+      const angle = (i / enemyCount) * Math.PI * 2;
+      const distance = 150 + Math.random() * 50; // 150-200 pixels away
+      
+      const x = playerPos.x + Math.cos(angle) * distance;
+      const y = playerPos.y + Math.sin(angle) * distance;
+      
+      // Manually spawn enemy using spawn system
+      const enemy = this.spawnSystem.spawnEnemyAt(x, y, basicEnemyType);
+    }
+  }
+  
+  private createDiscoveryChest(worldWidth: number, worldHeight: number): void {
+    // Place chest at an interesting but reachable location
+    // Position it northeast of spawn point - visible but requires exploration
+    const playerStartX = worldWidth / 2;
+    const playerStartY = worldHeight / 2;
+    
+    const chestX = playerStartX + 200; // 200 pixels northeast 
+    const chestY = playerStartY - 150;
+    
+    this.discoveryChest = new DiscoveryChest(this, chestX, chestY);
+  }
+  
   // Old methods removed - now using optimized texture generation
 
   update(time: number, delta: number): void {
@@ -616,6 +697,20 @@ export class GameScene extends Scene {
     this.collisionSystem.update(this.accumulatedTime, this.player, enemies);
     this.weaponSystem.update(delta, this.accumulatedTime, this.player, enemies);
     this.weaponEffectSystem.update(delta, this.player);
+    
+    // Update discovery chest
+    if (this.discoveryChest && !this.discoveryChest.isCollected) {
+      this.discoveryChest.update(delta);
+      
+      // Check if player is near chest
+      if (this.discoveryChest.isPlayerNear(this.player.getPosition())) {
+        this.discoveryChest.collect(() => {
+          // Resume game when reward window closes
+          this.scene.resume();
+          this.onDiscoveryChestCollected();
+        });
+      }
+    }
     
     // Update pickups and check for level up
     const xpCollected = this.pickupSystem.update(delta, this.player);
@@ -1006,7 +1101,8 @@ export class GameScene extends Scene {
         break;
         
       case 'healthRegen':
-        // Start health regeneration if not already active
+        // Instant heal + start regeneration if not already active
+        this.player.health = Math.min(this.player.health + 10, this.player.maxHealth);
         this.startHealthRegen();
         break;
         
@@ -1030,7 +1126,7 @@ export class GameScene extends Scene {
         delay: 1000, // Every second
         callback: () => {
           const currentRegenLevel = upgradeManager.getUpgradeLevel('healthRegen');
-          const regenAmount = currentRegenLevel / 5; // HP per second
+          const regenAmount = currentRegenLevel * 1.0; // 1 HP per second per level
           if (this.player.health < this.player.maxHealth) {
             this.player.health = Math.min(
               this.player.health + regenAmount,
@@ -1068,5 +1164,17 @@ export class GameScene extends Scene {
       ease: 'Power2',
       onComplete: () => notification.destroy()
     });
+  }
+  
+  private onDiscoveryChestCollected(): void {
+    // Apply the actual rewards (XP and health were already applied in the reward window)
+    const rewardXP = this.player.experienceToNext * 0.5; // 50% of current level XP requirement
+    this.player.addExperience(Math.floor(rewardXP));
+    this.totalXP += Math.floor(rewardXP);
+    
+    // Health boost
+    this.player.health = Math.min(this.player.maxHealth, this.player.health + 20);
+    
+    // Discovery chest rewards applied successfully
   }
 }

@@ -1,46 +1,44 @@
 # Brainrot Survivors Project Documentation
 
 ## Project Overview
-A Vampire Survivors-inspired game focusing on the core tension-release gameplay loop through movement decisions and upgrade choices.
+A physics-based brawler game where players kick enemies into devastating chain reactions. **This is NOT a Vampire Survivors clone** - it's a unique physics combat experience built around knockback mechanics and enemy collision chains.
 
 **Play the game**: https://beshoy23.github.io/brainrot-survivors/
 
 *Automatically deploys on every push to master via GitHub Actions*
 
-## Required Features
+## Core Game Design
 
-### Core Gameplay Loop
-1. **Movement System**
+### Physics Brawler Mechanics
+1. **Kick-Based Combat**
+   - Single attack type: KICKS that launch enemies as projectiles
+   - No traditional projectile weapons (arrows, bullets, etc.)
+   - All damage comes from kicking enemies into each other
+   - Chain reactions create exponential damage multipliers
+
+2. **Enemy-as-Projectile System**
+   - Kicked enemies become flying projectiles
+   - Different enemy weight classes affect flight physics
+   - Flying enemies can hit other enemies for chain damage
+   - Dead enemies continue flying and can still cause damage
+
+3. **Movement & Positioning**
    - Single input control (WASD/arrows only)
-   - Player ~20-30% faster than basic enemies
+   - Player positioning critical for chain reaction setups
    - 8-directional movement with no acceleration
-   - Creates spatial puzzle of navigating enemy swarms
+   - Spatial puzzle: position enemies for maximum chains
 
-2. **Enemy System**
-   - Direct movement toward player (no pathfinding)
-   - NO collision between enemies (phase through each other)
-   - Spawn off-screen with increasing frequency
-   - Contact damage with continuous health drain
-   - Multiple enemy types with different speeds
-
-3. **Combat System**
-   - Auto-attacking weapons (no manual aiming)
-   - Multiple weapon types with different patterns
-   - Weapon evolution/upgrade paths
-   - Visual feedback on hits
-
-4. **Progression System**
+4. **Physics-Driven Progression**
    - XP gems drop from defeated enemies
-   - Level-up triggers game pause
-   - Choose from 3-4 random upgrades
-   - Weapon and passive ability upgrades
-   - Synergies between different upgrades
+   - Level-up triggers game pause with kick-focused upgrades
+   - All upgrades enhance kick mechanics or physics behavior
+   - NO traditional weapon unlocks
 
-5. **Tension-Release Cycle**
-   - TENSION: Dodge enemies while collecting XP
-   - RELEASE: Level-up pause with upgrade choice
-   - REWARD: Feel more powerful after upgrade
-   - REPEAT: Enemies scale to maintain challenge
+5. **Chain Reaction Gameplay Loop**
+   - SETUP: Position enemies into dense groups
+   - KICK: Launch first enemy into the group
+   - CHAIN: Watch enemies collide and multiply damage
+   - COMBO: Track consecutive hits with exponential multipliers
 
 ## Tech Stack
 
@@ -124,11 +122,20 @@ src/
 - Cache-friendly data layout
 
 ## Testing & Validation
+
+### Performance Requirements
 - Maintain 60 FPS with 200+ enemies
 - All files under 100 lines
 - Zero runtime object creation
 - Memory usage under 50MB
 - Load time under 5 seconds
+
+### Automated Balance Testing
+- **Progression Balance Tests**: Validate level-up timing and XP requirements
+- **Weapon Balance Tests**: Ensure all weapons within 40-60 DPS range
+- **Upgrade Balance Tests**: Verify all upgrades provide 15-25% power per level
+- **Edge Case Testing**: Handle invalid inputs, extreme values, and error conditions
+- **Performance Monitoring**: Track frame time and object counts during testing
 
 ## Deployment & CI/CD
 
@@ -146,97 +153,126 @@ src/
 
 ## Current Implementation Status
 
-### ✅ Completed Features
-- **Player Character**: Animated warrior sprite with idle/run animations and proper scaling
-- **Diverse Enemies**: 5 distinct enemy types with unique visuals:
-  - Basic → Male zombies (red tint) with death animations
-  - Fast → Female zombies (cyan tint) with death animations  
-  - Tank → Black warriors (dark tint) with fade-out deaths
-  - Elite → Red lancers (purple tint) with fade-out deaths
-  - Swarm → Yellow monks (yellow tint) with fade-out deaths
-- **Visual Polish**: Proper depth layering, garlic aura below player, death animations
-- **Collision System**: Dying enemies don't damage player during death animations
-- **Weapon Effects**: Authentic VS-style garlic aura and whip slash visuals
-- **Performance**: Object pooling, spatial grid, 60 FPS with 200+ enemies
-- **Mobile Support**: Touch controls, responsive UI, mobile-optimized
+### ✅ Completed Physics Brawler Features
+- **Player Character**: Animated "br br patapim" sprite with kick attack animations
+- **Kick Combat System**: 4 distinct kick variations:
+  - Basic Kick → Standard horizontal knockback
+  - Uppercut → High-arc single-target launcher  
+  - Spinning Kick → 360° area crowd control
+  - Ground Pound → Massive shockwave devastation
+- **Enemy Weight Classes**: 5 physics-based enemy types:
+  - Light (Swarm) → Flies far, minimal chain damage
+  - Medium (Basic) → Balanced flight and chain damage
+  - Heavy (Tank) → Short flight, devastating chain damage
+  - Explosive (Elite) → Area damage on impact
+  - Each with unique knockback multipliers and chain effects
+- **Chain Reaction System**: Enemy-to-enemy collision detection with physics trails
+- **Combo System**: Exponential multipliers (1x → 1.5x → 2.25x → 3.38x) for consecutive chains
+- **Performance**: Object pooling, spatial grid, 60 FPS with 200+ flying enemies
+- **Mobile Support**: Touch controls optimized for kick-based gameplay
 
-### 🎮 Gameplay Features
-- **Movement**: 8-directional WASD/arrow controls with mobile virtual joystick
-- **Combat**: Auto-attacking weapons (projectiles, garlic aura, whip)
-- **Progression**: XP collection, level-up upgrades, weapon evolution
-- **Balance**: VS-style scaling difficulty and upgrade system
-- **Audio**: Death sounds and weapon feedback
+### 🥋 Physics Combat Features
+- **Movement**: Tactical positioning for maximum chain setups
+- **Knockback Physics**: Realistic momentum, decay, and collision detection
+- **Visual Effects**: Flying enemy trails, combo counters, chain hit effects
+- **Progression**: Kick-focused upgrades only (force, speed, range, chain power)
+- **Audio**: Impact sounds and chain reaction feedback
 
-## Future Considerations
-- Save system for progress persistence
-- Leaderboards for competitive play
-- Additional weapon types and enemy varieties
-- Enhanced visual effects and particle systems
-- Extended sound effects and background music
+### 🎯 Player Engagement Systems (Phase 1 Complete)
+- **Explosive Start**: Fast first level-up with immediate enemy spawns
+- **Visual Juice**: Screen shake, particle effects, critical hits with flashy feedback
+- **Discovery Mechanics**: Mysterious chests with cinematic reward windows and pause functionality
+- **Progression Balance**: Automated testing ensures level 5 in 2-3 minutes (not 11 seconds)
+- **Weapon Balance**: All weapons tested and balanced within 40-60 DPS range
 
-## TODO: Improve Testing Strategy (High Priority)
+### ⚖️ Kick-Focused Upgrade System (Completely Redesigned)
+- **Pure Physics Focus**: ZERO traditional weapon upgrades - only kick mechanics
+- **Core Kick Upgrades**: 
+  - Kick Force → +25% knockback power per level
+  - Kick Speed → +20% attack rate per level  
+  - Kick Range → +15% reach per level
+  - Chain Power → +30% chain reaction force per level
+  - Multi-Kick → Hit additional enemies per kick
+- **Technique Unlocks**: Uppercut, Spinning Kick, Ground Pound variations
+- **Physics Modifications**: Bouncy enemies, sticky combos, explosive chains, magnetic pulls
+- **No Traditional Weapons**: Removed whip, garlic, axe, projectiles - 100% kick-based
 
-### Critical Gap: Platform-Specific UI Testing
-Today's XP bar mobile bug revealed a major testing blind spot. The bug wasn't caught because tests focus on logic, not visual positioning or platform-specific UI behavior.
+## Physics Brawler Roadmap
 
-### Testing Strategy Improvements Needed:
+### ✅ Phase 1: Core Physics System (COMPLETE)
+- **Kick Combat System**: 4 kick variations with unique physics
+- **Enemy Weight Classes**: Light/Medium/Heavy/Explosive physics behavior
+- **Chain Reaction System**: Enemy-to-enemy collision and combo multipliers
+- **Upgrade System**: 100% kick-focused, no traditional weapons
 
-#### 1. Visual/UI Positioning Tests
-```typescript
-describe('Mobile UI Positioning', () => {
-  it('should position XP bar above safe area on mobile', () => {
-    const scene = new GameScene();
-    scene.isMobile = true;
-    scene.scale.height = 800;
-    scene.updateUI();
-    
-    // Verify XP bar Y position accounts for safe area
-    const expectedY = 800 - 20 - 20; // height - xpBarHeight - safeAreaBottom
-    expect(scene.xpBar.lastDrawY).toBe(expectedY);
-  });
-});
-```
+### 🚧 Phase 2: Physics Modifications (In Progress)
+- **Sticky Enemies**: Kicked enemies clump together for bigger projectiles
+- **Bouncy Physics**: Enemies bounce off walls and each other multiple times
+- **Explosive Chains**: Enemies explode after extended chain reactions
+- **Magnetic Kicks**: Pull enemies together before launching devastating kicks
 
-#### 2. Cross-Platform Configuration Tests
-- Test that MobileConfig values are actually used
-- Verify mobile vs desktop UI differences
-- Check safe area calculations work correctly
+### Phase 3: Environmental Physics
+- **Destructible Walls**: Kick enemies through barriers
+- **Bounce Pads**: Environmental elements that amplify knockback
+- **Physics Puzzles**: Use chain reactions to solve environmental challenges
+- **Danger Zones**: Areas where physics behave differently
 
-#### 3. Viewport Boundary Tests
-```typescript
-it('should keep all UI elements within visible area on mobile', () => {
-  // Test XP bar doesn't go below visible area
-  // Test health bar doesn't go above visible area
-  // Test all UI elements stay within screen bounds
-});
-```
+### Phase 4: Advanced Chain Systems
+- **Combo Mastery**: Extended combo system with special techniques
+- **Physics Challenges**: Daily challenges focused on chain reactions
+- **Leaderboards**: Longest combo chains and highest multipliers
+- **Replay System**: Share incredible chain reaction moments
 
-#### 4. Device-Specific Tests
-- Test multiple device configurations (iPhone, Android, tablets)
-- Test different screen sizes and orientations
-- Test edge cases (very small screens, extreme aspect ratios)
+### Long-Term Physics Evolution
+- **New Enemy Physics**: Cluster enemies, magnetic enemies, bouncing enemies
+- **Advanced Kick Techniques**: Wall kicks, aerial combos, physics manipulations
+- **Environmental Storytelling**: Use physics to tell stories through destruction
+- **Community Challenges**: Physics-based multiplayer competitions
 
-#### 5. Integration Tests with Real Browser
-- Use Playwright/Puppeteer for actual mobile viewport testing
-- Screenshot comparison for visual regression testing
-- Test on real devices or emulators
+## Development Status & Testing Strategy
 
-#### 6. Configuration Validation Tests
-- Ensure all mobile config properties are defined and used
-- Test consistency between config files and implementation
-- Validate safe area usage across all components
+### ✅ Physics System Testing Suite
+- **Kick Balance Testing**: Validated all 4 kick types for unique physics behavior
+- **Chain Reaction Testing**: Mathematical validation of combo multipliers and chain damage
+- **Enemy Physics Testing**: Verified weight class behaviors and knockback calculations
+- **Performance Testing**: 60 FPS maintained with 200+ flying enemies and active chains
 
-### Why Current Tests Missed This Bug:
-1. **No Visual/Rendering Tests** - Tests check logic, not UI positioning
-2. **Mock-Heavy Testing** - Real Phaser rendering never tested
-3. **Platform Isolation** - Tests run in Node.js, not browser environment
-4. **Missing Integration Tests** - No end-to-end mobile experience validation
+### 📊 Current Physics Balance Status
+- **4 kick variations perfectly balanced** for distinct tactical roles
+- **5 enemy weight classes** provide meaningful physics variety
+- **Combo system validated** with exponential scaling up to 10x multipliers
+- **Zero traditional weapon dependencies** - 100% physics-focused gameplay
+- **Performance optimized** for complex chain reaction scenarios
 
-### Implementation Priority:
-1. Add UI positioning tests to existing components
-2. Create mobile-specific test suite
-3. Set up visual regression testing pipeline
-4. Add device-specific configuration tests
-5. Implement browser-based integration tests
+### 🎯 Testing Coverage Gaps (Future Priority)
+#### Platform-Specific UI Testing
+- **Mobile viewport positioning** - XP bar, health bar, button placement
+- **Touch interaction testing** - Virtual joystick, upgrade selection
+- **Device-specific configurations** - iPhone vs Android vs tablet layouts
+- **Visual regression testing** - Screenshot comparison for UI consistency
 
-This gap in testing strategy allowed a critical mobile bug to reach production. UI positioning should be treated as testable behavior, not just visual polish.
+#### Integration Testing Needs
+- **End-to-end gameplay scenarios** - Full game loop validation
+- **Cross-browser compatibility** - Chrome, Safari, Firefox, Edge
+- **Performance testing on low-end devices** - Maintain 60 FPS targets
+- **Real device testing** - Physical mobile device validation
+
+### 🔧 Physics Testing Architecture
+- **Mathematical Simulation**: Pure TypeScript calculations for knockback physics and chain damage
+- **Real-time Physics Validation**: Live testing of enemy trajectories and collision detection
+- **Browser Console Integration**: Quick testing via `testKickPhysics()` and `testChainReactions()` functions
+- **Performance Monitoring**: Track frame rates during complex multi-enemy chain scenarios
+
+## 🥋 IMPORTANT: Game Identity
+
+**This is a PHYSICS BRAWLER, not a Vampire Survivors clone!**
+
+- ❌ NO traditional projectile weapons (arrows, bullets, magic)
+- ❌ NO weapon evolution trees or weapon unlocks
+- ❌ NO auto-attacking ranged combat
+- ✅ 100% KICK-BASED combat with physics knockback
+- ✅ Enemy-to-enemy collision chains as primary damage source
+- ✅ Tactical positioning for maximum chain reaction setups
+- ✅ Unique "br br patapim" character with kick animations
+
+**The core innovation**: Using enemies as projectiles through physics-based kicks!

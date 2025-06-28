@@ -42,9 +42,7 @@ jest.mock('../../config/upgrades', () => ({
 
 jest.mock('../../config/weaponUpgrades', () => ({
   WEAPON_UPGRADES: {
-    whip: { id: 'whip', name: 'Whip', type: 'weapon' },
-    axe: { id: 'axe', name: 'Axe', type: 'weapon' },
-    garlic: { id: 'garlic', name: 'Garlic', type: 'weapon' }
+    // No weapon unlocks - all kick techniques are unlocked via regular upgrades
   },
   hasWeapon: jest.fn(),
   unlockWeapon: jest.fn()
@@ -182,16 +180,20 @@ describe('UpgradeManager', () => {
       expect(damageUpgrade).toBeUndefined();
     });
 
-    it('should include weapon unlocks when weapons not owned', () => {
-      (hasWeapon as jest.Mock).mockImplementation((id) => id === 'whip');
+    it('should return kick-based upgrades only', () => {
+      const upgrades = upgradeManager.getRandomUpgrades(3);
       
-      const upgrades = upgradeManager.getRandomUpgrades(4);
+      // All upgrades should be from the kick-based upgrade system
+      const validUpgradeIds = ['kickForce', 'kickSpeed', 'kickRange', 'chainPower', 'multiKick',
+        'uppercutVariation', 'spinningKickVariation', 'groundPoundVariation',
+        'moveSpeed', 'maxHealth', 'healthRegen', 'bouncyEnemies', 'stickyEnemies',
+        'explosiveChains', 'magneticKicks', 'xpMagnet', 'armor'];
       
-      const weaponUnlocks = upgrades.filter(u => 
-        ['axe', 'garlic'].includes(u.id)
-      );
+      upgrades.forEach(upgrade => {
+        expect(validUpgradeIds).toContain(upgrade.id);
+      });
       
-      expect(weaponUnlocks.length).toBeGreaterThan(0);
+      expect(upgrades.length).toBe(3);
     });
 
     it('should handle case when fewer upgrades available than requested', () => {

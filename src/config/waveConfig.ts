@@ -9,11 +9,11 @@ export interface WaveConfig {
 
 // VS-style wave progression - TRUE VS DENSITY!
 export const WAVE_CONFIG: WaveConfig[] = [
-  // Minute 0-1: Gentle learning phase (like real VS)
+  // Minute 0-1: Balanced start for proper progression
   {
     minute: 0,
-    minEnemies: 15, // Start very small like VS
-    spawnInterval: 1200,
+    minEnemies: 15, // Moderate start to allow skill building
+    spawnInterval: 1200, // Slower for proper progression timing
     types: ['basic']
   },
   

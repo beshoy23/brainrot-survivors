@@ -17,72 +17,13 @@ export class WeaponEffectSystem {
     this.scene = scene;
   }
   
-  createGarlicAura(player: Player, radius: number = 100): string {
-    const id = 'garlic_aura';
-    
-    // Remove existing garlic aura if any
-    if (this.effects.has(id)) {
-      this.removeEffect(id);
-    }
-    
-    const graphics = this.scene.add.graphics();
-    graphics.setDepth(4); // Below player but above ground
-    
-    let pulseTime = 0;
-    
-    const effect: WeaponEffect = {
-      id,
-      graphics,
-      update: (delta: number, player: Player) => {
-        const pos = player.getPosition();
-        graphics.clear();
-        
-        // Update pulse animation
-        pulseTime += delta;
-        const pulseFactor = 0.9 + Math.sin(pulseTime * 0.003) * 0.1; // 90% to 110% size
-        const currentRadius = radius * pulseFactor;
-        
-        // Draw gradient-like effect with multiple circles
-        const layers = 5;
-        for (let i = layers; i > 0; i--) {
-          const layerRadius = (currentRadius / layers) * i;
-          const alpha = 0.15 * (1 - (i - 1) / layers); // Fade from center to edge
-          
-          graphics.fillStyle(0x9B30FF, alpha);
-          graphics.fillCircle(pos.x, pos.y, layerRadius);
-        }
-        
-        // Add outer glow ring
-        graphics.lineStyle(2, 0xDA70D6, 0.4);
-        graphics.strokeCircle(pos.x, pos.y, currentRadius);
-        
-        // Add inner bright core
-        graphics.fillStyle(0xE6E6FA, 0.3);
-        graphics.fillCircle(pos.x, pos.y, currentRadius * 0.2);
-      },
-      destroy: () => {
-        graphics.destroy();
-      }
-    };
-    
-    this.effects.set(id, effect);
-    return id;
-  }
-  
-  createWhipSlash(player: Player, direction: number, length: number = 70): string {
-    const id = `whip_slash_${++this.effectCounter}`;
+  createKickFlash(player: Player, direction: number, range: number = 30): string {
+    const id = `kick_flash_${++this.effectCounter}`;
     const graphics = this.scene.add.graphics();
     graphics.setDepth(6); // Above most things
     
     let lifeTime = 0;
-    const maxLifeTime = 150; // Quick 150ms flash
-    
-    // Store whip parameters for redrawing
-    const arcAngle = 60; // Wider 60-degree arc for more whip-like appearance
-    const baseAngle = direction > 0 ? -10 : 170; // Slight downward angle
-    const startAngle = baseAngle - arcAngle/2;
-    const endAngle = baseAngle + arcAngle/2;
-    const segments = 6; // More segments for smoother curve
+    const maxLifeTime = 100; // Quick 100ms flash for snappy kicks
     
     const effect: WeaponEffect = {
       id,
@@ -95,42 +36,73 @@ export class WeaponEffectSystem {
           return;
         }
         
-        // Clear and redraw at player's current position
         graphics.clear();
         
         const currentPos = player.getPosition();
-        const points = [];
-        
-        // Calculate whip arc from player's current position
-        for (let i = 0; i <= segments; i++) {
-          const progress = i / segments;
-          const angle = (startAngle + (endAngle - startAngle) * progress) * Math.PI / 180;
-          const distance = 20 + (length - 20) * progress;
-          
-          const x = currentPos.x + Math.cos(angle) * distance;
-          const y = currentPos.y + Math.sin(angle) * distance;
-          points.push({x, y});
-        }
-        
-        // Simple fade effect - no complex layering to avoid timing issues
         const fadeProgress = lifeTime / maxLifeTime;
         const alpha = Math.max(0, 1 - fadeProgress);
         
-        // Draw single whip slash with consistent timing
-        graphics.lineStyle(6, 0xFFFFFF, alpha);
-        graphics.beginPath();
-        graphics.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-          graphics.lineTo(points[i].x, points[i].y);
-        }
-        graphics.strokePath();
+        // Draw kick flash effect - simple arc in front of player
+        const startAngle = direction - 45; // 90 degree arc
+        const endAngle = direction + 45;
         
-        // Simple tip highlight
-        if (points.length > 0 && alpha > 0.5) {
-          const tipPoint = points[points.length - 1];
-          graphics.fillStyle(0xFFD700);
-          graphics.alpha = alpha;
-          graphics.fillCircle(tipPoint.x, tipPoint.y, 4);
+        graphics.fillStyle(0xFFFF00, alpha * 0.6);
+        graphics.beginPath();
+        graphics.arc(currentPos.x, currentPos.y, range, 
+          startAngle * Math.PI / 180, endAngle * Math.PI / 180);
+        graphics.lineTo(currentPos.x, currentPos.y);
+        graphics.closePath();
+        graphics.fillPath();
+        
+        // Add border
+        graphics.lineStyle(2, 0xFFD700, alpha);
+        graphics.strokePath();
+      },
+      destroy: () => {
+        graphics.destroy();
+      }
+    };
+    
+    this.effects.set(id, effect);
+    return id;
+  }
+  
+  createSpinningKickEffect(player: Player, radius: number = 50): string {
+    const id = `spinning_kick_${++this.effectCounter}`;
+    const graphics = this.scene.add.graphics();
+    graphics.setDepth(6); // Above most things
+    
+    let lifeTime = 0;
+    const maxLifeTime = 200; // Longer for spinning effect
+    
+    const effect: WeaponEffect = {
+      id,
+      graphics,
+      update: (delta: number, player: Player) => {
+        lifeTime += delta;
+        
+        if (lifeTime >= maxLifeTime) {
+          this.removeEffect(id);
+          return;
+        }
+        
+        graphics.clear();
+        
+        const currentPos = player.getPosition();
+        const fadeProgress = lifeTime / maxLifeTime;
+        const alpha = Math.max(0, 1 - fadeProgress);
+        const spinProgress = (lifeTime / maxLifeTime) * 360;
+        
+        // Draw spinning kick effect - rotating arcs
+        for (let i = 0; i < 3; i++) {
+          const rotation = (spinProgress + i * 120) * Math.PI / 180;
+          const startAngle = rotation - 0.5;
+          const endAngle = rotation + 0.5;
+          
+          graphics.lineStyle(4, 0x00FF00, alpha);
+          graphics.beginPath();
+          graphics.arc(currentPos.x, currentPos.y, radius, startAngle, endAngle);
+          graphics.strokePath();
         }
       },
       destroy: () => {

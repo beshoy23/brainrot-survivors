@@ -38,31 +38,31 @@ describe('WeaponEffectSystem - Whip Persistence Bug', () => {
     weaponEffectSystem = new WeaponEffectSystem(mockScene);
   });
   
-  describe('whip slash cleanup', () => {
-    it('BUG: multiple whip slashes can accumulate if fired rapidly', () => {
-      // Fire multiple whips quickly
-      const slashIds = [];
+  describe('kick effect cleanup', () => {
+    it('BUG: multiple kick flashes can accumulate if fired rapidly', () => {
+      // Fire multiple kicks quickly
+      const kickIds = [];
       for (let i = 0; i < 5; i++) {
-        slashIds.push(weaponEffectSystem.createWhipSlash(mockPlayer, 1));
+        kickIds.push(weaponEffectSystem.createKickFlash(mockPlayer, 90));
       }
       
       // All 5 effects exist
       expect(weaponEffectSystem['effects'].size).toBe(5);
       
-      // Update once - none should be removed yet (< 150ms)
+      // Update once - none should be removed yet (< 100ms)
       weaponEffectSystem.update(50, mockPlayer);
       expect(weaponEffectSystem['effects'].size).toBe(5);
       
       // Update past lifetime - all should be removed
-      weaponEffectSystem.update(200, mockPlayer);
+      weaponEffectSystem.update(150, mockPlayer);
       expect(weaponEffectSystem['effects'].size).toBe(0);
     });
 
-    it('BUG: whip effects persist if update is not called', () => {
-      const slashId = weaponEffectSystem.createWhipSlash(mockPlayer, 1);
+    it('BUG: kick effects persist if update is not called', () => {
+      const kickId = weaponEffectSystem.createKickFlash(mockPlayer, 90);
       
       // Effect created
-      expect(weaponEffectSystem['effects'].has(slashId)).toBe(true);
+      expect(weaponEffectSystem['effects'].has(kickId)).toBe(true);
       
       // If update is never called, effect persists forever
       // This simulates game pause or frame skip
@@ -97,14 +97,14 @@ describe('WeaponEffectSystem - Whip Persistence Bug', () => {
     });
 
     it('FIXED: effect IDs no longer collide with rapid firing', () => {
-      // Create two whips rapidly
-      const id1 = weaponEffectSystem.createWhipSlash(mockPlayer, 1);
-      const id2 = weaponEffectSystem.createWhipSlash(mockPlayer, -1);
+      // Create two kicks rapidly
+      const id1 = weaponEffectSystem.createKickFlash(mockPlayer, 90);
+      const id2 = weaponEffectSystem.createKickFlash(mockPlayer, 270);
       
       // IDs should be different now!
       expect(id1).not.toBe(id2);
-      expect(id1).toBe('whip_slash_1');
-      expect(id2).toBe('whip_slash_2');
+      expect(id1).toBe('kick_flash_1');
+      expect(id2).toBe('kick_flash_2');
       
       // Both effects should exist
       expect(weaponEffectSystem['effects'].size).toBe(2);
@@ -113,7 +113,7 @@ describe('WeaponEffectSystem - Whip Persistence Bug', () => {
     it('POTENTIAL FIX: use incrementing counter for unique IDs', () => {
       // Better approach: use counter
       let effectCounter = 0;
-      const createUniqueId = () => `whip_slash_${++effectCounter}`;
+      const createUniqueId = () => `kick_flash_${++effectCounter}`;
       
       const ids = [];
       for (let i = 0; i < 100; i++) {

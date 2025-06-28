@@ -56,9 +56,14 @@ export class Weapon {
     // Apply damage multiplier from upgrades
     const upgradeManager = (window as any).upgradeManager;
     const damageMultiplier = upgradeManager && upgradeManager.getUpgradeLevel ? 
-      (1 + (upgradeManager.getUpgradeLevel('damage') * 0.15)) : 1;
+      (1 + (upgradeManager.getUpgradeLevel('damage') * 0.10)) : 1;
     
-    return this.damage * damageMultiplier;
+    // Apply projectile count penalty (prevents multi-shot from being overpowered)
+    const projectileCount = upgradeManager && upgradeManager.getUpgradeLevel ? 
+      upgradeManager.getUpgradeLevel('projectileCount') : 0;
+    const projectilePenalty = projectileCount > 0 ? Math.pow(0.8, projectileCount) : 1; // 20% reduction per additional projectile
+    
+    return this.damage * damageMultiplier * projectilePenalty;
   }
   
   setBehavior(behavior: IWeaponBehavior): void {

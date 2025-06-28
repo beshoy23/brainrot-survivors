@@ -26,16 +26,20 @@ export class Player {
   private lastAfterimageTime: number = 0;
   private afterimageInterval: number = 50; // ms between afterimages
   private isMoving: boolean = false;
+  
+  // Attack animation state
+  private isAttacking: boolean = false;
+  private attackAnimationDuration: number = 300; // ms
 
   constructor(scene: Scene, x: number, y: number) {
     // Create player as animated sprite
-    this.sprite = scene.add.sprite(x, y, 'warrior-idle', 0);
+    this.sprite = scene.add.sprite(x, y, 'patapim-idle', 0);
     this.sprite.setScale(0.4); // Scale down from 192x192 to ~77x77 (larger than zombies)
     this.sprite.setDepth(GameConfig.player.depth);
     
     // Create animations
-    this.createWarriorAnimations(scene);
-    this.sprite.play('warrior-idle-anim');
+    this.createPatapimAnimations(scene);
+    this.sprite.play('patapim-idle-anim');
     
     this.health = GameConfig.player.maxHealth;
     this.maxHealth = GameConfig.player.maxHealth;
@@ -46,8 +50,8 @@ export class Player {
     // Check if mobile
     this.isMobile = (window as any).isMobile || false;
     
-    // Always set up keyboard controls (WASD works on all platforms)
-    this.keys = scene.input.keyboard!.addKeys('W,A,S,D');
+    // Always set up keyboard controls (WASD + Arrow keys work on all platforms)
+    this.keys = scene.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
   }
 
   update(deltaTime: number): void {
@@ -101,11 +105,11 @@ export class Player {
       this.velocity.x = joystickVelocity.x;
       this.velocity.y = joystickVelocity.y;
     } else if (this.keys) {
-      // Use keyboard movement (works on all platforms)
-      if (this.keys.A.isDown) this.velocity.x = -speed;
-      if (this.keys.D.isDown) this.velocity.x = speed;
-      if (this.keys.W.isDown) this.velocity.y = -speed;
-      if (this.keys.S.isDown) this.velocity.y = speed;
+      // Use keyboard movement (WASD + Arrow keys work on all platforms)
+      if (this.keys.A.isDown || this.keys.LEFT.isDown) this.velocity.x = -speed;
+      if (this.keys.D.isDown || this.keys.RIGHT.isDown) this.velocity.x = speed;
+      if (this.keys.W.isDown || this.keys.UP.isDown) this.velocity.y = -speed;
+      if (this.keys.S.isDown || this.keys.DOWN.isDown) this.velocity.y = speed;
       
       // Normalize diagonal movement
       if (this.velocity.x !== 0 && this.velocity.y !== 0) {
@@ -115,13 +119,13 @@ export class Player {
   }
 
   takeDamage(amount: number): void {
-    // Apply flat armor reduction (VS-style)
+    // Apply percentage-based armor reduction (fixed from game-breaking flat reduction)
     const upgradeManager = (window as any).upgradeManager;
-    const flatArmor = upgradeManager ? 
-      (upgradeManager.getUpgradeLevel('armor') * 2) : 0;
+    const armorLevel = upgradeManager ? upgradeManager.getUpgradeLevel('armor') : 0;
     
-    // Flat damage reduction with minimum 1 damage
-    const actualDamage = Math.max(1, Math.floor(amount - flatArmor));
+    // Percentage-based damage reduction with 60% cap and minimum 1 damage
+    const damageReduction = Math.min(armorLevel * 0.15, 0.6); // 15% per level, max 60%
+    const actualDamage = Math.max(1, Math.floor(amount * (1 - damageReduction)));
     
     this.health -= actualDamage;
     this.lastDamageTime = Date.now();
@@ -155,6 +159,16 @@ export class Player {
   setVirtualJoystick(joystick: VirtualJoystick): void {
     this.virtualJoystick = joystick;
   }
+  
+  playAttackAnimation(): void {
+    this.isAttacking = true;
+    this.sprite.play('patapim-attack-anim');
+    
+    // Reset attack state after animation completes
+    this.sprite.scene.time.delayedCall(this.attackAnimationDuration, () => {
+      this.isAttacking = false;
+    });
+  }
 
   addExperience(amount: number): boolean {
     this.experience += amount;
@@ -181,12 +195,12 @@ export class Player {
     return this.experience / this.experienceToNext;
   }
 
-  private createWarriorAnimations(scene: Scene): void {
+  private createPatapimAnimations(scene: Scene): void {
     // Create idle animation
-    if (!scene.anims.exists('warrior-idle-anim')) {
+    if (!scene.anims.exists('patapim-idle-anim')) {
       scene.anims.create({
-        key: 'warrior-idle-anim',
-        frames: scene.anims.generateFrameNumbers('warrior-idle', { 
+        key: 'patapim-idle-anim',
+        frames: scene.anims.generateFrameNumbers('patapim-idle', { 
           start: 0, 
           end: 7  // 8 frames (0-7)
         }),
@@ -196,15 +210,28 @@ export class Player {
     }
     
     // Create run animation
-    if (!scene.anims.exists('warrior-run-anim')) {
+    if (!scene.anims.exists('patapim-run-anim')) {
       scene.anims.create({
-        key: 'warrior-run-anim',
-        frames: scene.anims.generateFrameNumbers('warrior-run', { 
+        key: 'patapim-run-anim',
+        frames: scene.anims.generateFrameNumbers('patapim-run', { 
           start: 0, 
           end: 5  // 6 frames (0-5)
         }),
         frameRate: 10, // Faster for running
         repeat: -1
+      });
+    }
+    
+    // Create attack animation
+    if (!scene.anims.exists('patapim-attack-anim')) {
+      scene.anims.create({
+        key: 'patapim-attack-anim',
+        frames: scene.anims.generateFrameNumbers('patapim-attack', { 
+          start: 0, 
+          end: 3  // 4 frames (0-3)
+        }),
+        frameRate: 12, // Fast for attack
+        repeat: 0 // Play once, don't loop
       });
     }
   }
@@ -218,14 +245,20 @@ export class Player {
     }
     // If only moving vertically, keep current facing direction
     
+    // Priority: Attack animation > Movement animations
+    if (this.isAttacking) {
+      // Attack animation is playing, don't override it
+      return;
+    }
+    
     // Switch between idle and running animations
     if (this.isMoving) {
-      if (this.sprite.anims.currentAnim?.key !== 'warrior-run-anim') {
-        this.sprite.play('warrior-run-anim');
+      if (this.sprite.anims.currentAnim?.key !== 'patapim-run-anim') {
+        this.sprite.play('patapim-run-anim');
       }
     } else {
-      if (this.sprite.anims.currentAnim?.key !== 'warrior-idle-anim') {
-        this.sprite.play('warrior-idle-anim');
+      if (this.sprite.anims.currentAnim?.key !== 'patapim-idle-anim') {
+        this.sprite.play('patapim-idle-anim');
       }
     }
   }

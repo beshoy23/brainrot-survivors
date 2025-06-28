@@ -28,6 +28,7 @@ export class Projectile {
   public lifespan: number = 2000;
   public age: number = 0;
   public id: string;
+  public weaponType?: string; // Track weapon type for special effects
   private rotating: boolean = false;
   private rotationSpeed: number = 360; // degrees per second
   private followTarget?: FollowTarget;

@@ -11,40 +11,13 @@ export interface WeaponUpgradeDefinition {
   isWeaponUnlock: boolean;
 }
 
-// VS-style weapon unlocks
+// KICK-BASED WEAPON UNLOCKS ONLY - This is a physics brawler!
 export const WEAPON_UPGRADES: Record<string, WeaponUpgradeDefinition> = {
-  axe: {
-    id: 'axe',
-    weaponType: WeaponType.AXE,
-    name: 'Axe',
-    description: 'Throws powerful axes in a rotating pattern. High damage, moderate speed.',
-    icon: '🪓',
-    category: 'weapon',
-    maxLevel: 1,
-    isWeaponUnlock: true
-  },
-  
-  garlic: {
-    id: 'garlic',
-    weaponType: WeaponType.GARLIC,
-    name: 'Garlic',
-    description: 'Damages all nearby enemies constantly. Perfect for close combat.',
-    icon: '🧄',
-    category: 'weapon',
-    maxLevel: 1,
-    isWeaponUnlock: true
-  },
-  
-  whip: {
-    id: 'whip',
-    weaponType: WeaponType.WHIP,
-    name: 'Whip',
-    description: 'Strikes horizontally left and right. Good area coverage.',
-    icon: '⚡',
-    category: 'weapon',
-    maxLevel: 1,
-    isWeaponUnlock: true
-  }
+  // No weapon unlocks - all kick techniques are unlocked via regular upgrades
+  // See src/config/upgrades.ts for kick technique unlocks:
+  // - uppercutVariation
+  // - spinningKickVariation  
+  // - groundPoundVariation
 };
 
 // Helper to check if player has weapon

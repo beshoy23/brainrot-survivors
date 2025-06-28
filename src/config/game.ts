@@ -29,8 +29,8 @@ export const GameConfig = {
     }
   },
   progression: {
-    baseXPRequired: 10,
-    xpMultiplier: 1.5,
+    baseXPRequired: 18, // Fine-tuned for 25-30 second first level-up
+    xpMultiplier: 1.6, // Balanced curve for 2.5-3 minute level 5
     xpGemDropChance: 1.0
   },
   camera: {

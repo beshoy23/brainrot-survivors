@@ -1,97 +1,101 @@
 import { Weapon, WeaponConfig } from '../entities/Weapon';
-import { BasicWeaponBehavior } from './behaviors/BasicWeaponBehavior';
-import { MultiShotBehavior } from './behaviors/MultiShotBehavior';
-import { VSMultiShotBehavior } from './behaviors/VSMultiShotBehavior';
-import { SpreadShotBehavior } from './behaviors/SpreadShotBehavior';
-import { AxeBehavior } from './behaviors/AxeBehavior';
-import { GarlicBehavior } from './behaviors/GarlicBehavior';
-import { WhipBehavior } from './behaviors/WhipBehavior';
-import { GameConfig } from '../config/game';
+// ONLY KICK-BASED BEHAVIORS - This is a physics brawler!
+import { BrAttackBehavior } from './behaviors/BrAttackBehavior';
+import { UppercutBehavior } from './behaviors/UppercutBehavior';
+import { SpinningKickBehavior } from './behaviors/SpinningKickBehavior';
+import { GroundPoundBehavior } from './behaviors/GroundPoundBehavior';
 
 export enum WeaponType {
-  BASIC = 'basic',
-  MULTI_SHOT = 'multiShot',
-  SPREAD_SHOT = 'spreadShot',
-  AXE = 'axe',
-  GARLIC = 'garlic',
-  WHIP = 'whip'
+  // ONLY KICK-BASED WEAPONS - This is a physics brawler!
+  BRATTACK = 'brattack',
+  UPPERCUT = 'uppercut',
+  SPINNING_KICK = 'spinningKick',
+  GROUND_POUND = 'groundPound'
 }
 
 export class WeaponFactory {
   static createWeapon(type: WeaponType): Weapon {
-    const baseConfig = GameConfig.weapons.basic;
+    // Apply global kick upgrades to all kick weapons
+    const upgradeManager = (window as any).upgradeManager;
+    const kickSpeedMultiplier = upgradeManager ? 
+      (1 + (upgradeManager.getUpgradeLevel('kickSpeed') * 0.20)) : 1;
+    const kickRangeMultiplier = upgradeManager ? 
+      (1 + (upgradeManager.getUpgradeLevel('kickRange') * 0.15)) : 1;
     
     switch (type) {
-      case WeaponType.BASIC:
+      case WeaponType.BRATTACK:
         return new Weapon({
-          ...baseConfig,
-          behavior: new BasicWeaponBehavior()
+          damage: 12, // Damage less important now - it's about the physics!
+          fireRate: 1.8 * kickSpeedMultiplier, // Kick speed upgrade
+          projectileSpeed: 600, // Fast for instant hit feel
+          range: 30 * kickRangeMultiplier, // Kick range upgrade
+          behavior: new BrAttackBehavior()
         });
         
-      case WeaponType.MULTI_SHOT:
-        // This will be updated based on upgrade level
+      case WeaponType.UPPERCUT:
         return new Weapon({
-          ...baseConfig,
-          behavior: new MultiShotBehavior(0)
+          damage: 15, // Higher damage for single-target focused attack
+          fireRate: 1.2 * kickSpeedMultiplier, // Apply kick speed
+          projectileSpeed: 500,
+          range: 35 * kickRangeMultiplier, // Apply kick range
+          behavior: new UppercutBehavior()
         });
         
-      case WeaponType.SPREAD_SHOT:
+      case WeaponType.SPINNING_KICK:
         return new Weapon({
-          ...baseConfig,
-          damage: baseConfig.damage * 0.7, // Slightly less damage per projectile
-          behavior: new SpreadShotBehavior(3, 30)
+          damage: 8, // Lower damage per hit since it hits multiple enemies
+          fireRate: 2.5 * kickSpeedMultiplier, // Apply kick speed
+          projectileSpeed: 400,
+          range: 50 * kickRangeMultiplier, // Apply kick range
+          behavior: new SpinningKickBehavior()
         });
         
-      case WeaponType.AXE:
+      case WeaponType.GROUND_POUND:
         return new Weapon({
-          damage: 35, // Fixed damage for better balance (was baseConfig.damage * 2)
-          fireRate: 1, // Slower fire rate
+          damage: 10, // Moderate damage with shockwave effect
+          fireRate: 3.0 * kickSpeedMultiplier, // Apply kick speed
           projectileSpeed: 300,
-          range: 200,
-          behavior: new AxeBehavior()
-        });
-        
-      case WeaponType.GARLIC:
-        return new Weapon({
-          damage: 18, // Increased for better area damage (was baseConfig.damage * 0.5)
-          fireRate: 2, // Ticks twice per second
-          projectileSpeed: 50, // Very slow moving for stationary effect
-          range: 20, // Short range for area effect
-          behavior: new GarlicBehavior()
-        });
-        
-      case WeaponType.WHIP:
-        return new Weapon({
-          damage: 28, // Balanced damage (was baseConfig.damage * 1.5)
-          fireRate: 1.5, // Medium fire rate
-          projectileSpeed: 800, // Very fast for "instant" feel
-          range: 150,
-          behavior: new WhipBehavior()
+          range: 60 * kickRangeMultiplier, // Apply kick range
+          behavior: new GroundPoundBehavior()
         });
         
       default:
+        // Fallback to basic kick if unknown type
         return new Weapon({
-          ...baseConfig,
-          behavior: new BasicWeaponBehavior()
+          damage: 12,
+          fireRate: 1.8 * kickSpeedMultiplier,
+          projectileSpeed: 600,
+          range: 30 * kickRangeMultiplier,
+          behavior: new BrAttackBehavior()
         });
     }
   }
   
   static createStarterWeapon(): Weapon {
-    // Check for multi-shot upgrade and create appropriate weapon
+    // Always start with basic kick - this is a physics brawler!
+    return this.createWeapon(WeaponType.BRATTACK);
+  }
+  
+  static createKickVariationWeapons(): Weapon[] {
     const upgradeManager = (window as any).upgradeManager;
-    const multiShotLevel = upgradeManager ? 
-      upgradeManager.getUpgradeLevel('projectileCount') : 0;
+    const weapons: Weapon[] = [];
     
-    if (multiShotLevel > 0) {
-      // Use VS-style spread multishot
-      const weapon = new Weapon({
-        ...GameConfig.weapons.basic,
-        behavior: new VSMultiShotBehavior(multiShotLevel)
-      });
-      return weapon;
+    // Always start with basic kick
+    weapons.push(this.createWeapon(WeaponType.BRATTACK));
+    
+    // Add unlocked variations
+    if (upgradeManager?.getUpgradeLevel('uppercutVariation') > 0) {
+      weapons.push(this.createWeapon(WeaponType.UPPERCUT));
     }
     
-    return this.createWeapon(WeaponType.BASIC);
+    if (upgradeManager?.getUpgradeLevel('spinningKickVariation') > 0) {
+      weapons.push(this.createWeapon(WeaponType.SPINNING_KICK));
+    }
+    
+    if (upgradeManager?.getUpgradeLevel('groundPoundVariation') > 0) {
+      weapons.push(this.createWeapon(WeaponType.GROUND_POUND));
+    }
+    
+    return weapons;
   }
 }

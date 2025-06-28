@@ -1,4 +1,4 @@
-import { EnemyTypeConfig, EnemyTypeId } from '../enemies/EnemyType';
+import { EnemyTypeConfig, EnemyTypeId, WeightClass } from '../enemies/EnemyType';
 
 export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
   [EnemyTypeId.BASIC]: {
@@ -11,7 +11,11 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     color: 0xff0000, // Red
     shape: 'square',
     spawnWeight: 10,
-    minWaveTime: 0
+    minWaveTime: 0,
+    // MEDIUM weight class - balanced physics
+    weightClass: WeightClass.MEDIUM,
+    kickMultiplier: 1.0, // Normal flight distance
+    chainDamageMultiplier: 1.0 // Normal chain damage
   },
   
   [EnemyTypeId.FAST]: {
@@ -24,7 +28,11 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     color: 0x00ffff, // Cyan - distinct from green gems
     shape: 'diamond',
     spawnWeight: 6,
-    minWaveTime: 30 // Appears after 30 seconds
+    minWaveTime: 30, // Appears after 30 seconds
+    // LIGHT weight class - flies far and fast
+    weightClass: WeightClass.LIGHT,
+    kickMultiplier: 1.5, // Flies 50% further
+    chainDamageMultiplier: 0.8 // Less chain damage (lighter)
   },
   
   [EnemyTypeId.TANK]: {
@@ -37,7 +45,11 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     color: 0x800000, // Dark red
     shape: 'square',
     spawnWeight: 3,
-    minWaveTime: 60 // Appears after 1 minute
+    minWaveTime: 60, // Appears after 1 minute
+    // HEAVY weight class - hard to kick but devastating chains
+    weightClass: WeightClass.HEAVY,
+    kickMultiplier: 0.6, // Flies less distance (heavy)
+    chainDamageMultiplier: 2.0 // Double chain damage (devastating impact)
   },
   
   [EnemyTypeId.SWARM]: {
@@ -51,7 +63,11 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     shape: 'circle',
     spawnWeight: 8,
     minWaveTime: 45, // Appears after 45 seconds
-    spawnGroupSize: 5 // Groups of 5
+    spawnGroupSize: 5, // Groups of 5
+    // LIGHT weight class - perfect for chain reactions
+    weightClass: WeightClass.LIGHT,
+    kickMultiplier: 1.8, // Flies very far (tiny and light)
+    chainDamageMultiplier: 0.5 // Minimal chain damage
   },
   
   [EnemyTypeId.ELITE]: {
@@ -64,7 +80,13 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyTypeConfig> = {
     color: 0x4b0082, // Indigo
     shape: 'diamond',
     spawnWeight: 0, // Special spawn logic
-    minWaveTime: 120 // Appears after 2 minutes
+    minWaveTime: 120, // Appears after 2 minutes
+    // EXPLOSIVE weight class - devastating area damage when kicked!
+    weightClass: WeightClass.EXPLOSIVE,
+    kickMultiplier: 0.8, // Moderate flight distance
+    chainDamageMultiplier: 3.0, // Massive chain damage
+    explosiveRadius: 60, // Large explosion radius
+    explosiveDamage: 25 // High explosive damage
   }
 };
 

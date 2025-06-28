@@ -254,7 +254,13 @@ export class SpawnSystem {
     this.spawnSingleEnemy(playerPos, ENEMY_TYPES.elite);
     
     // Visual/audio feedback for elite spawn could go here
-    console.log('Elite enemy spawned!');
+  }
+
+  spawnEnemyAt(x: number, y: number, enemyType: any): Enemy {
+    // Public method for manual enemy spawning (e.g., initial enemies)
+    const enemy = this.enemyPool.acquire();
+    enemy.spawn(x, y, enemyType);
+    return enemy;
   }
 
   getActiveEnemies(): Enemy[] {

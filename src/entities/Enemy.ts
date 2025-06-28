@@ -24,6 +24,16 @@ export class Enemy {
   public movementAngle: number; // For straight-line movement
   public spawnTime: number; // Track when spawned for despawning
   public isDying: boolean = false; // Track if enemy is playing death animation
+  // Knockback properties
+  public knockbackVelocity: Vector2 = new Vector2();
+  public knockbackDecay: number = 0.94; // Slower decay for longer flying distance
+  public isKnockedBack: boolean = false; // Can this enemy hit other enemies?
+  private knockbackThreshold: number = 80; // Lower threshold for longer projectile state
+  
+  // Visual trail for knocked-back enemies
+  private trailPoints: Array<{x: number, y: number, alpha: number}> = [];
+  private lastTrailTime: number = 0;
+  private trailGraphics?: GameObjects.Graphics;
   
   private scene: Scene;
   
@@ -57,6 +67,11 @@ export class Enemy {
     this.sprite.setVisible(false);
     this.sprite.setActive(false);
     this.sprite.setScale(0.8); // Scale down slightly from 64px
+    
+    // Create trail graphics
+    this.trailGraphics = scene.add.graphics();
+    this.trailGraphics.setVisible(false);
+    this.trailGraphics.setDepth(this.sprite.depth - 1); // Behind enemy
     
     // Default to basic enemy
     this.enemyType = ENEMY_TYPES.basic;
@@ -382,8 +397,92 @@ export class Enemy {
   
   // Removed graphics drawing methods - now using animated sprites
 
+  applyKnockback(forceX: number, forceY: number): void {
+    // Apply knockback force
+    this.knockbackVelocity.x = forceX;
+    this.knockbackVelocity.y = forceY;
+    
+    // Check if knockback is strong enough to make this enemy a projectile
+    const knockbackMagnitude = Math.sqrt(forceX * forceX + forceY * forceY);
+    this.isKnockedBack = knockbackMagnitude > this.knockbackThreshold;
+  }
+  
+  private renderTrail(): void {
+    if (!this.trailGraphics) return;
+    
+    this.trailGraphics.clear();
+    
+    if (this.trailPoints.length > 1) {
+      this.trailGraphics.setVisible(true);
+      
+      // Draw trail as connected circles with fading alpha
+      for (let i = 0; i < this.trailPoints.length; i++) {
+        const point = this.trailPoints[i];
+        const size = 3 + (i / this.trailPoints.length) * 2; // Growing size
+        
+        this.trailGraphics.fillStyle(0xFF6600, point.alpha); // Orange trail
+        this.trailGraphics.fillCircle(point.x, point.y, size);
+      }
+    } else {
+      this.trailGraphics.setVisible(false);
+    }
+  }
+
   update(deltaTime: number, playerPos: Vector2): void {
-    if (!this.sprite.active || this.isDying) return;
+    if (!this.sprite.active) return;
+    
+    // ALWAYS apply knockback effects (even for dying enemies!)
+    if (this.knockbackVelocity.x !== 0 || this.knockbackVelocity.y !== 0) {
+      // Apply knockback to position
+      this.sprite.x += this.knockbackVelocity.x * deltaTime / 1000;
+      this.sprite.y += this.knockbackVelocity.y * deltaTime / 1000;
+      
+      // Create trail effect for knocked-back enemies
+      if (this.isKnockedBack && Date.now() - this.lastTrailTime > 50) { // Every 50ms
+        this.trailPoints.push({
+          x: this.sprite.x,
+          y: this.sprite.y,
+          alpha: 0.8
+        });
+        this.lastTrailTime = Date.now();
+        
+        // Limit trail length
+        if (this.trailPoints.length > 8) {
+          this.trailPoints.shift();
+        }
+      }
+      
+      // Decay knockback over time
+      this.knockbackVelocity.x *= this.knockbackDecay;
+      this.knockbackVelocity.y *= this.knockbackDecay;
+      
+      // Stop knockback when it's negligible
+      if (Math.abs(this.knockbackVelocity.x) < 1 && Math.abs(this.knockbackVelocity.y) < 1) {
+        this.knockbackVelocity.set(0, 0);
+        this.isKnockedBack = false; // No longer a projectile
+        this.trailPoints = []; // Clear trail
+      }
+      
+      // Check if still fast enough to be a projectile
+      const currentMagnitude = Math.sqrt(this.knockbackVelocity.x * this.knockbackVelocity.x + 
+                                        this.knockbackVelocity.y * this.knockbackVelocity.y);
+      if (currentMagnitude < this.knockbackThreshold) {
+        this.isKnockedBack = false;
+        this.trailPoints = []; // Clear trail
+      }
+    }
+    
+    // Update trail alpha decay and render
+    this.trailPoints.forEach(point => {
+      point.alpha *= 0.95; // Fade trail points
+    });
+    this.trailPoints = this.trailPoints.filter(point => point.alpha > 0.1);
+    
+    // Render trail
+    this.renderTrail();
+    
+    // Skip normal AI movement if dying (but knockback still works!)
+    if (this.isDying) return;
     
     // VS-style: Swarm enemies despawn after 10 seconds if they haven't died
     if (this.movementType === 'straight' && Date.now() - this.spawnTime > 10000) {
@@ -479,7 +578,6 @@ export class Enemy {
     // Only zombies have death animations
     if (this.enemyType.id === 'basic' || this.enemyType.id === 'fast') {
       const deathKey = `${this.enemyType.id}-dead-anim`;
-      console.log(`Playing death animation: ${deathKey}`);
       
       // Create death animation if it doesn't exist
       this.createDeathAnimation();
@@ -487,7 +585,6 @@ export class Enemy {
       // Switch to death texture and play animation
       const spriteConfig = this.getSpriteConfig();
       const deathTexture = spriteConfig.idleTexture.replace('-idle', '-dead');
-      console.log(`Setting death texture: ${deathTexture}`);
       
       this.sprite.setTexture(deathTexture, 0);
       this.sprite.play(deathKey);
@@ -537,6 +634,15 @@ export class Enemy {
     this.isDying = false; // Reset death state
     this.sprite.setScale(1); // Reset scale
     this.sprite.setAlpha(1); // Reset alpha for medieval warriors
+    
+    // Reset knockback and trail
+    this.knockbackVelocity.set(0, 0);
+    this.isKnockedBack = false;
+    this.trailPoints = [];
+    if (this.trailGraphics) {
+      this.trailGraphics.clear();
+      this.trailGraphics.setVisible(false);
+    }
     
     // Reset variations
     this.variations = {

@@ -25,7 +25,7 @@ jest.mock('../../config/upgrades', () => ({
 
 jest.mock('../../config/weaponUpgrades', () => ({
   WEAPON_UPGRADES: {
-    whip: { id: 'whip', name: 'Whip', type: 'weapon' }
+    // No weapon unlocks - all kick techniques are unlocked via regular upgrades
   },
   hasWeapon: jest.fn(),
   unlockWeapon: jest.fn()
@@ -159,19 +159,20 @@ describe('UpgradeManager - Potential Bugs', () => {
       expect(upgradeManager.getUpgradeLevel('damage')).toBe(1);
     });
 
-    it('BUG: reset() doesnt reset weapon unlocks', () => {
-      // Unlock a weapon
-      (unlockWeapon as jest.Mock).mockImplementation(() => {});
+    it('BUG: reset() should reset all upgrade levels', () => {
+      // Apply some kick upgrades
+      upgradeManager.applyUpgrade('kickForce');
+      upgradeManager.applyUpgrade('kickSpeed');
       
-      // Apply weapon unlock through upgrade system
-      const weaponUpgrade = WEAPON_UPGRADES.whip;
-      // ... weapon gets unlocked ...
+      expect(upgradeManager.getUpgradeLevel('kickForce')).toBe(1);
+      expect(upgradeManager.getUpgradeLevel('kickSpeed')).toBe(1);
       
       // Reset upgrade manager
       upgradeManager.reset();
       
-      // Upgrade levels reset but weapons still unlocked!
-      // This breaks progression if used for new game
+      // All upgrade levels should be reset to 0
+      expect(upgradeManager.getUpgradeLevel('kickForce')).toBe(0);
+      expect(upgradeManager.getUpgradeLevel('kickSpeed')).toBe(0);
     });
   });
 
@@ -213,7 +214,7 @@ describe('UpgradeManager - Potential Bugs', () => {
     it('BUG: weapon guarantee logic can fail with specific RNG', () => {
       // Only one weapon upgrade available
       (hasWeapon as jest.Mock).mockReturnValue(true);
-      WEAPON_UPGRADES.whip = { id: 'whip', name: 'Whip', type: 'weapon' };
+      // No weapon upgrades in kick-based system
       
       // Request 3 upgrades with "guarantee 2 weapons" logic
       const upgrades = upgradeManager.getRandomUpgrades(3);

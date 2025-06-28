@@ -28,47 +28,56 @@ export class WeaponBalanceAnalyzer {
     let stats: WeaponStats;
     
     switch (weaponType) {
-      case WeaponType.BASIC:
+      case WeaponType.BRATTACK:
         stats = {
-          name: 'Basic Shot',
+          name: 'Basic Kick (Br Attack)',
           baseDPS: baseWeapon.damage * baseWeapon.fireRate,
           maxDPS: baseWeapon.damage * damageMultiplier * baseWeapon.fireRate * fireRateMultiplier,
-          coverage: 0.2, // Single target
-          reliability: 0.9, // Almost always hits
-          versatility: 0.7, // Good all-around
+          coverage: 0.25, // Close range kick
+          reliability: 0.9, // Very reliable
+          versatility: 0.8, // Good all-around kick
           powerScore: 0
         };
         break;
         
-      case WeaponType.MULTI_SHOT:
-        const projectiles = 1 + projectileBonus;
+      case WeaponType.UPPERCUT:
         stats = {
-          name: `Multi Shot (${projectiles})`,
-          baseDPS: baseWeapon.damage * baseWeapon.fireRate * projectiles,
-          maxDPS: baseWeapon.damage * damageMultiplier * baseWeapon.fireRate * fireRateMultiplier * projectiles,
-          coverage: 0.2 + (projectileBonus * 0.2), // More targets
-          reliability: 0.85, // Might miss some shots
-          versatility: 0.9, // Excellent scaling
+          name: 'Uppercut Technique',
+          baseDPS: baseWeapon.damage * baseWeapon.fireRate,
+          maxDPS: baseWeapon.damage * damageMultiplier * baseWeapon.fireRate * fireRateMultiplier,
+          coverage: 0.15, // Single target focus
+          reliability: 0.95, // Very accurate
+          versatility: 0.7, // Limited to single targets
           powerScore: 0
         };
         break;
         
-      case WeaponType.SPREAD_SHOT:
-        const spreadDamage = baseWeapon.damage * 0.7; // Reduced per projectile
-        const spreadProjectiles = 3;
+      case WeaponType.SPINNING_KICK:
         stats = {
-          name: 'Spread Shot',
-          baseDPS: spreadDamage * baseWeapon.fireRate * spreadProjectiles * 0.6, // Not all hit
-          maxDPS: spreadDamage * damageMultiplier * baseWeapon.fireRate * fireRateMultiplier * spreadProjectiles,
-          coverage: 0.6, // Wide area
-          reliability: 0.6, // Some projectiles miss
-          versatility: 0.8, // Good for crowds
+          name: 'Spinning Kick',
+          baseDPS: baseWeapon.damage * baseWeapon.fireRate * 3, // Hits multiple enemies
+          maxDPS: baseWeapon.damage * damageMultiplier * baseWeapon.fireRate * fireRateMultiplier * 3,
+          coverage: 0.8, // 360 degree coverage
+          reliability: 0.9, // Very reliable area attack
+          versatility: 0.9, // Excellent for crowds
+          powerScore: 0
+        };
+        break;
+        
+      case WeaponType.GROUND_POUND:
+        stats = {
+          name: 'Ground Pound',
+          baseDPS: baseWeapon.damage * baseWeapon.fireRate * 2.5, // Shockwave hits multiple
+          maxDPS: baseWeapon.damage * damageMultiplier * baseWeapon.fireRate * fireRateMultiplier * 2.5,
+          coverage: 0.7, // Large shockwave area
+          reliability: 0.85, // Good reliability
+          versatility: 0.85, // Good for crowds and positioning
           powerScore: 0
         };
         break;
         
       default:
-        stats = this.analyzeWeapon(WeaponType.BASIC, upgradeLevel);
+        stats = this.analyzeWeapon(WeaponType.BRATTACK, upgradeLevel);
     }
     
     // Calculate power score
@@ -87,9 +96,10 @@ export class WeaponBalanceAnalyzer {
     const report: string[] = ['=== WEAPON COMPARISON ===\n'];
     
     const weapons = [
-      WeaponType.BASIC,
-      WeaponType.MULTI_SHOT,
-      WeaponType.SPREAD_SHOT
+      WeaponType.BRATTACK,
+      WeaponType.UPPERCUT,
+      WeaponType.SPINNING_KICK,
+      WeaponType.GROUND_POUND
     ];
     
     const analyses = weapons.map(type => this.analyzeWeapon(type, upgradeLevel));

@@ -3,6 +3,7 @@ import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
 import { UpgradeScene } from './scenes/UpgradeScene';
 import { PauseScene } from './scenes/PauseScene';
+import { ChestRewardScene } from './scenes/ChestRewardScene';
 import { DeviceDetection } from './mobile/DeviceDetection';
 import { MobileConfig } from './mobile/MobileConfig';
 import './analysis/runBalance'; // Load balance tools
@@ -55,7 +56,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false
     }
   },
-  scene: [BootScene, GameScene, UpgradeScene, PauseScene],
+  scene: [BootScene, GameScene, UpgradeScene, PauseScene, ChestRewardScene],
   input: {
     activePointers: deviceInfo.hasTouch ? 4 : 1
   }
