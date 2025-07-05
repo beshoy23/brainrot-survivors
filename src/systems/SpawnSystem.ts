@@ -23,7 +23,7 @@ export class SpawnSystem {
     this.enemyPool = new PoolManager(
       () => new Enemy(scene),
       (enemy) => enemy.reset(),
-      800 // Increased for VS-level density
+      150 // Realistic pool size for collision physics
     );
     
     // Initialize with first wave

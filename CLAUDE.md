@@ -170,6 +170,8 @@ src/
 - **Combo System**: Exponential multipliers (1x → 1.5x → 2.25x → 3.38x) for consecutive chains
 - **Performance**: Object pooling, spatial grid, 60 FPS with 200+ flying enemies
 - **Mobile Support**: Touch controls optimized for kick-based gameplay
+- **Strategic Wall System**: Environmental physics with collision detection and bouncing
+- **Hold-to-Aim Controls**: Time dilation with directional aiming and visual feedback
 
 ### 🥋 Physics Combat Features
 - **Movement**: Tactical positioning for maximum chain setups
@@ -177,6 +179,8 @@ src/
 - **Visual Effects**: Flying enemy trails, combo counters, chain hit effects
 - **Progression**: Kick-focused upgrades only (force, speed, range, chain power)
 - **Audio**: Impact sounds and chain reaction feedback
+- **Wall Bouncing**: Kicked enemies ricochet off walls for extended chain reactions
+- **Environmental Strategy**: Walls create funneling, corners, and ricochet opportunities
 
 ### 🎯 Player Engagement Systems (Phase 1 Complete)
 - **Explosive Start**: Fast first level-up with immediate enemy spawns
@@ -205,19 +209,25 @@ src/
 - **Chain Reaction System**: Enemy-to-enemy collision and combo multipliers
 - **Upgrade System**: 100% kick-focused, no traditional weapons
 
-### 🚧 Phase 2: Physics Modifications (In Progress)
+### ✅ Phase 2: Environmental Physics (COMPLETE)
+- **Wall System**: Strategic environmental obstacles for positioning
+- **Wall Bouncing**: Kicked enemies ricochet off walls for extended chains
+- **Enemy Funneling**: Walls channel enemies into better formations
+- **Hold-to-Aim**: Time dilation with directional kick control and visual feedback
+
+### 🚧 Phase 3: Advanced Physics Modifications (Next)
 - **Sticky Enemies**: Kicked enemies clump together for bigger projectiles
-- **Bouncy Physics**: Enemies bounce off walls and each other multiple times
 - **Explosive Chains**: Enemies explode after extended chain reactions
 - **Magnetic Kicks**: Pull enemies together before launching devastating kicks
+- **Destructible Walls**: Kick enemies through barriers for special effects
 
-### Phase 3: Environmental Physics
-- **Destructible Walls**: Kick enemies through barriers
+### Phase 4: Advanced Environmental Systems
+- **Dynamic Walls**: Walls that move, rotate, or appear/disappear
 - **Bounce Pads**: Environmental elements that amplify knockback
 - **Physics Puzzles**: Use chain reactions to solve environmental challenges
 - **Danger Zones**: Areas where physics behave differently
 
-### Phase 4: Advanced Chain Systems
+### Phase 5: Advanced Chain Systems
 - **Combo Mastery**: Extended combo system with special techniques
 - **Physics Challenges**: Daily challenges focused on chain reactions
 - **Leaderboards**: Longest combo chains and highest multipliers

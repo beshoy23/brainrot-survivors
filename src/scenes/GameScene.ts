@@ -26,6 +26,7 @@ import { InputModeManager } from '../systems/InputModeManager';
 import { AimingInputHandler } from '../systems/AimingInputHandler';
 import { AimingVisualizer } from '../systems/AimingVisualizer';
 import { WallSystem } from '../systems/WallSystem';
+import { BallSystem } from '../systems/BallSystem';
 
 console.log('🎯 GameScene: All imports loaded successfully');
 
@@ -42,6 +43,7 @@ export class GameScene extends Scene {
   private aimingInputHandler?: AimingInputHandler;
   private aimingVisualizer?: AimingVisualizer;
   private wallSystem!: WallSystem;
+  private ballSystem!: BallSystem;
   
   // UI elements
   private healthBar!: Phaser.GameObjects.Graphics;
@@ -200,7 +202,8 @@ export class GameScene extends Scene {
     this.weaponSystem = new WeaponSystem(this);
     this.pickupSystem = new PickupSystem(this);
     this.weaponEffectSystem = new WeaponEffectSystem(this);
-    this.wallSystem = new WallSystem(this);
+    this.wallSystem = new WallSystem(this, worldWidth, worldHeight);
+    this.ballSystem = new BallSystem(this);
     
     // Create test walls to experiment with positioning strategy
     this.wallSystem.createTestWalls();
@@ -739,6 +742,7 @@ export class GameScene extends Scene {
     this.collisionSystem.update(this.accumulatedTime, this.player, enemies);
     this.weaponSystem.update(delta, this.accumulatedTime, this.player, enemies);
     this.weaponEffectSystem.update(delta, this.player);
+    this.ballSystem.update(delta, this.player, enemies, this.wallSystem);
     
     // Update discovery chest
     if (this.discoveryChest && !this.discoveryChest.isCollected) {

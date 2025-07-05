@@ -7,54 +7,54 @@ export interface WaveConfig {
   specialEvent?: string;
 }
 
-// VS-style wave progression - TRUE VS DENSITY!
+// Realistic physics-based wave progression - COLLISION OPTIMIZED!
 export const WAVE_CONFIG: WaveConfig[] = [
-  // Minute 0-1: Balanced start for proper progression
+  // Minute 0-1: Small start for collision testing
   {
     minute: 0,
-    minEnemies: 15, // Moderate start to allow skill building
-    spawnInterval: 1200, // Slower for proper progression timing
+    minEnemies: 8, // Start small for collision physics
+    spawnInterval: 1500, // Slower spawning
     types: ['basic']
   },
   
   // Minute 1-2: Gradual introduction 
   {
     minute: 1,
-    minEnemies: 40,
-    spawnInterval: 800,
+    minEnemies: 15, // Manageable collision count
+    spawnInterval: 1000,
     types: ['basic', 'fast'],
     bossSpawn: true
   },
   
-  // Minute 2-3: Swarm introduction
+  // Minute 2-3: Light swarm introduction
   {
     minute: 2,
-    minEnemies: 120,
-    spawnInterval: 400,
+    minEnemies: 25, // Realistic for collision detection
+    spawnInterval: 800,
     types: ['basic', 'fast', 'swarm']
   },
   
-  // Minute 3-4: Pressure increase
+  // Minute 3-4: Moderate pressure
   {
     minute: 3,
-    minEnemies: 180,
-    spawnInterval: 300,
+    minEnemies: 35, // Still manageable
+    spawnInterval: 600,
     types: ['basic', 'fast', 'swarm']
   },
   
   // Minute 4-5: Tank introduction
   {
     minute: 4,
-    minEnemies: 250,
-    spawnInterval: 250,
+    minEnemies: 45, // Reasonable collision count
+    spawnInterval: 500,
     types: ['basic', 'fast', 'swarm', 'tank']
   },
   
   // Minute 5-6: Major challenge
   {
     minute: 5,
-    minEnemies: 350,
-    spawnInterval: 200,
+    minEnemies: 60, // Higher but still realistic
+    spawnInterval: 400,
     types: ['basic', 'fast', 'swarm', 'tank'],
     bossSpawn: true,
     specialEvent: 'elite_wave'
@@ -63,24 +63,24 @@ export const WAVE_CONFIG: WaveConfig[] = [
   // Minute 6-7: High intensity
   {
     minute: 6,
-    minEnemies: 450,
-    spawnInterval: 150,
+    minEnemies: 75, // Maximum sustainable for collision
+    spawnInterval: 350,
     types: ['basic', 'fast', 'swarm', 'tank']
   },
   
-  // Minute 7-8: Extreme density
+  // Minute 7-8: Peak challenge
   {
     minute: 7,
-    minEnemies: 550,
-    spawnInterval: 120,
+    minEnemies: 90, // High but performance-safe
+    spawnInterval: 300,
     types: ['basic', 'fast', 'swarm', 'tank']
   },
   
-  // Minute 8+: VS peak intensity
+  // Minute 8+: Maximum sustainable intensity
   {
     minute: 8,
-    minEnemies: 650,
-    spawnInterval: 100,
+    minEnemies: 100, // Hard cap for collision performance
+    spawnInterval: 250,
     types: ['basic', 'fast', 'swarm', 'tank'],
     bossSpawn: true
   }

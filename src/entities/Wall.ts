@@ -15,10 +15,12 @@ export class Wall {
     this.width = width;
     this.height = height;
     
-    // Create visual representation
-    this.sprite = scene.add.rectangle(x, y, width, height, 0x666666, 1);
-    this.sprite.setStrokeStyle(2, 0x333333);
-    this.sprite.setDepth(10); // Above ground, below UI
+    // Create visual representation - SUPER VISIBLE for debugging
+    this.sprite = scene.add.rectangle(x, y, width, height, 0xff0000, 0.8); // RED and semi-transparent
+    this.sprite.setStrokeStyle(5, 0x000000); // BLACK thick border
+    this.sprite.setDepth(100); // Highest depth possible
+    
+    console.log('🧱 RED WALL created at:', x, y, 'size:', width, height);
     
     // Calculate bounds for collision detection
     this.bounds = {

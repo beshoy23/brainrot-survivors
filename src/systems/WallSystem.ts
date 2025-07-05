@@ -5,9 +5,13 @@ import { Vector2 } from '../utils/Vector2';
 export class WallSystem {
   private walls: Wall[] = [];
   private scene: Scene;
+  private worldWidth: number;
+  private worldHeight: number;
   
-  constructor(scene: Scene) {
+  constructor(scene: Scene, worldWidth?: number, worldHeight?: number) {
     this.scene = scene;
+    this.worldWidth = worldWidth || scene.scale.width;
+    this.worldHeight = worldHeight || scene.scale.height;
   }
   
   // Add a wall to the system
@@ -80,20 +84,29 @@ export class WallSystem {
   
   // Create some test wall layouts
   createTestWalls(): void {
-    const centerX = 400;
-    const centerY = 300;
+    const centerX = this.worldWidth / 2;
+    const centerY = this.worldHeight / 2;
     
-    // Create a corner formation - forces enemies to line up
-    this.addWall(centerX - 100, centerY - 100, 20, 200); // Left wall
-    this.addWall(centerX - 100, centerY - 100, 200, 20); // Top wall
+    console.log('🧱 Creating walls at world center:', centerX, centerY);
+    console.log('🧱 World size:', this.worldWidth, 'x', this.worldHeight);
+    
+    // Create a corner formation - forces enemies to line up (non-overlapping)
+    this.addWall(centerX - 115, centerY - 100, 30, 200); // Left wall (moved left)
+    this.addWall(centerX - 100, centerY - 115, 200, 30); // Top wall (moved up)
     
     // Create a corridor - creates funnel effect
-    this.addWall(centerX + 50, centerY - 150, 20, 100); // Upper corridor wall
-    this.addWall(centerX + 50, centerY + 150, 20, 100); // Lower corridor wall
+    this.addWall(centerX + 50, centerY - 150, 30, 100); // Upper corridor wall (thicker)
+    this.addWall(centerX + 50, centerY + 150, 30, 100); // Lower corridor wall (thicker)
     
     // Create scattered obstacles - forces interesting pathfinding
-    this.addWall(centerX - 200, centerY + 100, 40, 40); // Bottom left obstacle
-    this.addWall(centerX + 200, centerY - 50, 60, 30); // Right obstacle
+    this.addWall(centerX - 200, centerY + 100, 50, 50); // Bottom left obstacle (square)
+    this.addWall(centerX + 200, centerY - 50, 70, 40); // Right obstacle (bigger)
+    
+    // Add a simple wall right next to player spawn for immediate visibility
+    this.addWall(centerX + 50, centerY, 100, 20); // Horizontal wall near player
+    this.addWall(centerX, centerY + 50, 20, 100); // Vertical wall near player
+    
+    console.log('🧱 Created', this.walls.length, 'RED walls total');
   }
   
   // Create a simple maze layout

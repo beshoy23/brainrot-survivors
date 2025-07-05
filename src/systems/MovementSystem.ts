@@ -1,8 +1,15 @@
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { WallSystem } from './WallSystem';
+import { EnemyCollisionSystem } from './EnemyCollisionSystem';
 
 export class MovementSystem {
+  private enemyCollisionSystem: EnemyCollisionSystem;
+  
+  constructor() {
+    this.enemyCollisionSystem = new EnemyCollisionSystem();
+  }
+  
   update(deltaTime: number, player: Player, enemies: Enemy[], timeScale: number = 1.0, wallSystem?: WallSystem): void {
     // Update player (player movement not affected by time dilation for responsive controls)
     player.update(deltaTime);
@@ -27,11 +34,17 @@ export class MovementSystem {
     
     // O(n) performance - each enemy only calculates toward player
     activeEnemies.forEach(enemy => {
+      // Store previous position for continuous collision detection
+      const prevX = enemy.x;
+      const prevY = enemy.y;
+      
       enemy.update(scaledDeltaTime, finalPlayerPos);
       
       // Handle wall interactions - different behavior for knocked-back vs normal enemies
       if (wallSystem) {
         const enemyRadius = enemy.hitboxRadius || 15;
+        
+        // Check collision at new position
         const collision = wallSystem.checkCollision(enemy.x, enemy.y, enemyRadius);
         
         if (collision) {
@@ -55,12 +68,62 @@ export class MovementSystem {
               enemy.setPosition(correctedPos.x, correctedPos.y);
             }
           } else {
-            // Normal wall collision - push enemy out (creates funneling behavior)
-            const correctedPos = wallSystem.resolveCollision(enemy.x, enemy.y, enemyRadius);
-            enemy.setPosition(correctedPos.x, correctedPos.y);
+            // Normal wall collision - revert to previous position and try alternative movement
+            enemy.setPosition(prevX, prevY);
+            
+            // Try moving around the wall by adjusting direction
+            this.moveAroundWall(enemy, finalPlayerPos, wallSystem, enemyRadius, scaledDeltaTime);
           }
         }
       }
     });
+    
+    // Apply enemy-to-enemy collision detection (realistic physics)
+    this.enemyCollisionSystem.updateCollisions(activeEnemies, deltaTime);
+  }
+  
+  private moveAroundWall(enemy: Enemy, playerPos: Vector2, wallSystem: WallSystem, radius: number, deltaTime: number): void {
+    // Calculate direction to player
+    const dx = playerPos.x - enemy.x;
+    const dy = playerPos.y - enemy.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance === 0) return;
+    
+    const dirX = dx / distance;
+    const dirY = dy / distance;
+    
+    // Get enemy speed
+    const speed = enemy.enemyType.speed;
+    const moveDistance = speed * deltaTime / 1000;
+    
+    // Try alternative directions: perpendicular to the wall
+    const alternatives = [
+      { x: dirX * 0.7 + dirY * 0.7, y: dirY * 0.7 - dirX * 0.7 }, // 45° left
+      { x: dirX * 0.7 - dirY * 0.7, y: dirY * 0.7 + dirX * 0.7 }, // 45° right
+      { x: dirY, y: -dirX }, // 90° left
+      { x: -dirY, y: dirX }, // 90° right
+      { x: dirX * 0.5, y: dirY * 0.5 } // Half speed forward
+    ];
+    
+    // Try each alternative direction
+    for (const alt of alternatives) {
+      const magnitude = Math.sqrt(alt.x * alt.x + alt.y * alt.y);
+      if (magnitude === 0) continue;
+      
+      const normalizedX = alt.x / magnitude;
+      const normalizedY = alt.y / magnitude;
+      
+      const testX = enemy.x + normalizedX * moveDistance;
+      const testY = enemy.y + normalizedY * moveDistance;
+      
+      // Check if this direction is clear
+      if (!wallSystem.checkCollision(testX, testY, radius)) {
+        enemy.setPosition(testX, testY);
+        return;
+      }
+    }
+    
+    // If no direction works, just stay put (better than tunneling)
   }
 }

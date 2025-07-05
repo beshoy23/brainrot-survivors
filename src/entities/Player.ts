@@ -30,6 +30,10 @@ export class Player {
   // Attack animation state
   private isAttacking: boolean = false;
   private attackAnimationDuration: number = 300; // ms
+  
+  // Kick direction state
+  private kickDirection: Vector2 | null = null;
+  private shouldReturnToMovementFacing: boolean = false;
 
   constructor(scene: Scene, x: number, y: number) {
     // Create player as animated sprite
@@ -165,14 +169,41 @@ export class Player {
     this.virtualJoystick = joystick;
   }
   
-  playAttackAnimation(): void {
+  playAttackAnimation(kickDirection?: Vector2): void {
     this.isAttacking = true;
     this.sprite.play('patapim-attack-anim');
+    
+    // Store kick direction for facing
+    if (kickDirection) {
+      this.kickDirection = kickDirection.clone();
+      this.shouldReturnToMovementFacing = true;
+      
+      // Face the kick direction immediately
+      this.faceDirection(kickDirection);
+    }
     
     // Reset attack state after animation completes
     this.sprite.scene.time.delayedCall(this.attackAnimationDuration, () => {
       this.isAttacking = false;
+      
+      // Return to movement-based facing after a short delay
+      if (this.shouldReturnToMovementFacing) {
+        this.sprite.scene.time.delayedCall(100, () => {
+          this.shouldReturnToMovementFacing = false;
+          this.kickDirection = null;
+        });
+      }
     });
+  }
+  
+  private faceDirection(direction: Vector2): void {
+    // Face the direction based on horizontal component
+    if (direction.x > 0) {
+      this.sprite.setFlipX(false); // Face right
+    } else if (direction.x < 0) {
+      this.sprite.setFlipX(true);  // Face left
+    }
+    // If purely vertical, keep current facing
   }
 
   addExperience(amount: number): boolean {
@@ -242,13 +273,19 @@ export class Player {
   }
   
   private updateAnimation(): void {
-    // Update facing direction based on horizontal movement
-    if (this.velocity.x > 0) {
-      this.sprite.setFlipX(false); // Face right
-    } else if (this.velocity.x < 0) {
-      this.sprite.setFlipX(true);  // Face left (flip horizontally)
+    // Update facing direction - prioritize kick direction over movement
+    if (this.shouldReturnToMovementFacing && this.kickDirection) {
+      // During kick, face the kick direction
+      this.faceDirection(this.kickDirection);
+    } else {
+      // Normal movement-based facing
+      if (this.velocity.x > 0) {
+        this.sprite.setFlipX(false); // Face right
+      } else if (this.velocity.x < 0) {
+        this.sprite.setFlipX(true);  // Face left (flip horizontally)
+      }
+      // If only moving vertically, keep current facing direction
     }
-    // If only moving vertically, keep current facing direction
     
     // Priority: Attack animation > Movement animations
     if (this.isAttacking) {
