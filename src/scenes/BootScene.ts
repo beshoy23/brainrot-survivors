@@ -3,6 +3,7 @@ import { Scene } from 'phaser';
 export class BootScene extends Scene {
   constructor() {
     super({ key: 'BootScene' });
+    console.log('🚀 BootScene: Constructor called');
   }
 
   preload(): void {
@@ -10,9 +11,12 @@ export class BootScene extends Scene {
   }
 
   create(): void {
+    console.log('🚀 BootScene: create() called');
+    
     // Create placeholder graphics
     this.createPlaceholderGraphics();
     
+    console.log('🚀 BootScene: Starting GameScene...');
     // Start game scene
     this.scene.start('GameScene');
   }

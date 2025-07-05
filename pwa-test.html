@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Test - Kick Chain Brawler</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #000;
+      color: white;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    .success { border-color: #0f0; background: #001100; }
+    .error { border-color: #f00; background: #110000; }
+    .pending { border-color: #ff0; background: #111100; }
+    button {
+      background: #FF6600;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    #results {
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>🥋 PWA Test Suite</h1>
+  
+  <div class="test-section">
+    <h2>1. Manifest Test</h2>
+    <button onclick="testManifest()">Test Manifest</button>
+    <div id="manifest-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>2. Service Worker Test</h2>
+    <button onclick="testServiceWorker()">Test Service Worker</button>
+    <div id="sw-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>3. Icon Accessibility Test</h2>
+    <button onclick="testIcons()">Test Icons</button>
+    <div id="icon-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>4. Install Prompt Test</h2>
+    <button onclick="testInstallPrompt()">Test Install Prompt</button>
+    <div id="install-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <pre id="results"></pre>
+  </div>
+
+  <script>
+    let testResults = [];
+    
+    function log(message) {
+      testResults.push(`${new Date().toLocaleTimeString()}: ${message}`);
+      document.getElementById('results').textContent = testResults.join('\n');
+    }
+    
+    async function testManifest() {
+      const manifestDiv = document.getElementById('manifest-result');
+      manifestDiv.className = 'pending';
+      manifestDiv.innerHTML = 'Testing manifest...';
+      
+      try {
+        const baseUrl = 'https://beshoy23.github.io/brainrot-survivors';
+        const manifestUrl = `${baseUrl}/manifest.json`;
+        
+        const response = await fetch(manifestUrl);
+        if (!response.ok) {
+          throw new Error(`Manifest fetch failed: ${response.status}`);
+        }
+        
+        const manifest = await response.json();
+        log(`✅ Manifest loaded successfully`);
+        log(`   Name: ${manifest.name}`);
+        log(`   Start URL: ${manifest.start_url}`);
+        log(`   Icons: ${manifest.icons.length} icons defined`);
+        
+        manifestDiv.className = 'success';
+        manifestDiv.innerHTML = `✅ Manifest OK<br>Icons: ${manifest.icons.length}<br>Start URL: ${manifest.start_url}`;
+        
+        return manifest;
+      } catch (error) {
+        log(`❌ Manifest test failed: ${error.message}`);
+        manifestDiv.className = 'error';
+        manifestDiv.innerHTML = `❌ Failed: ${error.message}`;
+        return null;
+      }
+    }
+    
+    async function testServiceWorker() {
+      const swDiv = document.getElementById('sw-result');
+      swDiv.className = 'pending';
+      swDiv.innerHTML = 'Testing Service Worker...';
+      
+      try {
+        if (!('serviceWorker' in navigator)) {
+          throw new Error('Service Worker not supported');
+        }
+        
+        const baseUrl = 'https://beshoy23.github.io/brainrot-survivors';
+        const swUrl = `${baseUrl}/sw.js`;
+        
+        const response = await fetch(swUrl);
+        if (!response.ok) {
+          throw new Error(`SW fetch failed: ${response.status}`);
+        }
+        
+        const swCode = await response.text();
+        
+        // Check if paths are correctly prefixed
+        const hasCorrectPaths = swCode.includes('/brainrot-survivors/patapim.png');
+        
+        log(`✅ Service Worker file accessible`);
+        log(`   Size: ${swCode.length} bytes`);
+        log(`   GitHub Pages paths: ${hasCorrectPaths ? '✅' : '❌'}`);
+        
+        swDiv.className = hasCorrectPaths ? 'success' : 'error';
+        swDiv.innerHTML = `Service Worker: ${response.ok ? '✅' : '❌'}<br>Correct paths: ${hasCorrectPaths ? '✅' : '❌'}`;
+        
+        return { ok: response.ok, hasCorrectPaths };
+      } catch (error) {
+        log(`❌ Service Worker test failed: ${error.message}`);
+        swDiv.className = 'error';
+        swDiv.innerHTML = `❌ Failed: ${error.message}`;
+        return null;
+      }
+    }
+    
+    async function testIcons() {
+      const iconDiv = document.getElementById('icon-result');
+      iconDiv.className = 'pending';
+      iconDiv.innerHTML = 'Testing icons...';
+      
+      const baseUrl = 'https://beshoy23.github.io/brainrot-survivors';
+      const icons = [
+        'patapim.png',
+        'icon-192x192.png', 
+        'icon-512x512.png'
+      ];
+      
+      let successCount = 0;
+      
+      for (const icon of icons) {
+        try {
+          const response = await fetch(`${baseUrl}/${icon}`);
+          if (response.ok) {
+            successCount++;
+            log(`✅ Icon OK: ${icon}`);
+          } else {
+            log(`❌ Icon failed: ${icon} (${response.status})`);
+          }
+        } catch (error) {
+          log(`❌ Icon error: ${icon} - ${error.message}`);
+        }
+      }
+      
+      const allOk = successCount === icons.length;
+      iconDiv.className = allOk ? 'success' : 'error';
+      iconDiv.innerHTML = `Icons: ${successCount}/${icons.length} ✅`;
+      
+      return successCount;
+    }
+    
+    async function testInstallPrompt() {
+      const installDiv = document.getElementById('install-result');
+      installDiv.className = 'pending';
+      installDiv.innerHTML = 'Testing install capability...';
+      
+      // Check if PWA criteria are met
+      const criteria = {
+        'HTTPS': location.protocol === 'https:',
+        'Service Worker': 'serviceWorker' in navigator,
+        'Manifest': !!document.querySelector('link[rel="manifest"]'),
+        'Display Mode': window.matchMedia('(display-mode: browser)').matches
+      };
+      
+      let score = 0;
+      for (const [test, passed] of Object.entries(criteria)) {
+        if (passed) score++;
+        log(`${passed ? '✅' : '❌'} ${test}: ${passed}`);
+      }
+      
+      installDiv.className = score === 4 ? 'success' : 'error';
+      installDiv.innerHTML = `PWA Criteria: ${score}/4 ✅`;
+      
+      return score;
+    }
+    
+    // Auto-run all tests
+    window.addEventListener('load', async () => {
+      log('🚀 Starting PWA validation tests...');
+      
+      await testManifest();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await testServiceWorker();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await testIcons();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await testInstallPrompt();
+      
+      log('🏁 All tests completed!');
+    });
+  </script>
+</body>
+</html>

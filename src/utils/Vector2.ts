@@ -53,4 +53,9 @@ export class Vector2 {
   clone(): Vector2 {
     return new Vector2(this.x, this.y);
   }
+
+  // Dot product for angle calculations
+  dot(other: Vector2): number {
+    return this.x * other.x + this.y * other.y;
+  }
 }

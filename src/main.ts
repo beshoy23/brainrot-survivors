@@ -75,7 +75,9 @@ if (deviceInfo.isMobile || deviceInfo.isTablet) {
   document.documentElement.style.setProperty('--sal', `${device.getSafeAreaInsets().left}px`);
 }
 
+console.log('🚀 Creating Phaser game with config:', config);
 const game = new Phaser.Game(config);
+console.log('🚀 Phaser game created:', game);
 
 // Store device info globally for easy access
 (window as any).deviceInfo = deviceInfo;

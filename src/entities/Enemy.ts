@@ -20,6 +20,11 @@ export class Enemy {
   public get x(): number { return this.sprite.x; }
   public get y(): number { return this.sprite.y; }
   public get radius(): number { return this.hitboxRadius; }
+  
+  public setPosition(x: number, y: number): void {
+    this.sprite.x = x;
+    this.sprite.y = y;
+  }
   public movementType: 'homing' | 'straight'; // VS-style: swarm moves straight, others home
   public movementAngle: number; // For straight-line movement
   public spawnTime: number; // Track when spawned for despawning

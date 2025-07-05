@@ -4,10 +4,12 @@ import { BrAttackBehavior } from './behaviors/BrAttackBehavior';
 import { UppercutBehavior } from './behaviors/UppercutBehavior';
 import { SpinningKickBehavior } from './behaviors/SpinningKickBehavior';
 import { GroundPoundBehavior } from './behaviors/GroundPoundBehavior';
+import { DirectedKickBehavior } from './behaviors/DirectedKickBehavior';
 
 export enum WeaponType {
   // ONLY KICK-BASED WEAPONS - This is a physics brawler!
   BRATTACK = 'brattack',
+  DIRECTED_KICK = 'directedKick',
   UPPERCUT = 'uppercut',
   SPINNING_KICK = 'spinningKick',
   GROUND_POUND = 'groundPound'
@@ -30,6 +32,15 @@ export class WeaponFactory {
           projectileSpeed: 600, // Fast for instant hit feel
           range: 30 * kickRangeMultiplier, // Kick range upgrade
           behavior: new BrAttackBehavior()
+        });
+        
+      case WeaponType.DIRECTED_KICK:
+        return new Weapon({
+          damage: 12, // Same stats as BrAttack but with directional control
+          fireRate: 1.8 * kickSpeedMultiplier, // Kick speed upgrade
+          projectileSpeed: 600, // Fast for instant hit feel
+          range: 30 * kickRangeMultiplier, // Kick range upgrade
+          behavior: new DirectedKickBehavior()
         });
         
       case WeaponType.UPPERCUT:
@@ -72,16 +83,18 @@ export class WeaponFactory {
   }
   
   static createStarterWeapon(): Weapon {
-    // Always start with basic kick - this is a physics brawler!
-    return this.createWeapon(WeaponType.BRATTACK);
+    // Choose between directed kick (mobile) or auto-targeting kick (desktop)
+    const isMobile = (window as any).isMobile || false;
+    return this.createWeapon(isMobile ? WeaponType.DIRECTED_KICK : WeaponType.BRATTACK);
   }
   
   static createKickVariationWeapons(): Weapon[] {
     const upgradeManager = (window as any).upgradeManager;
     const weapons: Weapon[] = [];
     
-    // Always start with basic kick
-    weapons.push(this.createWeapon(WeaponType.BRATTACK));
+    // Choose between directed kick (mobile) or auto-targeting kick (desktop)
+    const isMobile = (window as any).isMobile || false;
+    weapons.push(this.createWeapon(isMobile ? WeaponType.DIRECTED_KICK : WeaponType.BRATTACK));
     
     // Add unlocked variations
     if (upgradeManager?.getUpgradeLevel('uppercutVariation') > 0) {

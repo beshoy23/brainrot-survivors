@@ -10,6 +10,7 @@ import { WeaponEffectSystem } from './WeaponEffectSystem';
 import { ScreenShake } from '../utils/ScreenShake';
 import { ParticleEffects } from '../utils/ParticleEffects';
 import { ComboSystem } from './ComboSystem';
+import { InputMode } from './InputModeManager';
 
 export interface EnemyDeathCallback {
   (x: number, y: number): void;
@@ -29,6 +30,9 @@ export class WeaponSystem {
   private screenShake?: ScreenShake;
   private particleEffects?: ParticleEffects;
   private comboSystem: ComboSystem;
+  
+  // Input mode management
+  private inputMode: InputMode = 'AUTO_TARGET';
 
   constructor(private scene: Scene) {
     // Initialize projectile pool
@@ -57,6 +61,70 @@ export class WeaponSystem {
   
   getComboSystem(): ComboSystem {
     return this.comboSystem;
+  }
+  
+  // Input mode management
+  setInputMode(mode: InputMode): void {
+    this.inputMode = mode;
+  }
+  
+  getCurrentInputMode(): InputMode {
+    return this.inputMode;
+  }
+  
+  // Manual firing for MANUAL_AIM mode
+  fireInDirection(direction: Vector2, player: Player, enemies: Enemy[]): void {
+    const playerPos = player.getPosition();
+    
+    // Find a suitable kick weapon for manual firing
+    const kickWeapon = this.weapons.find(weapon => {
+      const behaviorName = weapon.behavior.constructor.name;
+      return behaviorName === 'DirectedKickBehavior' || behaviorName === 'BrAttackBehavior';
+    });
+    
+    if (!kickWeapon || !kickWeapon.canFire(Date.now())) return;
+    
+    // Set direction for DirectedKickBehavior
+    if (kickWeapon.behavior.setDirection) {
+      // Normalize the direction
+      const magnitude = direction.magnitude();
+      if (magnitude > 0) {
+        const normalizedDirection = new Vector2(direction.x / magnitude, direction.y / magnitude);
+        kickWeapon.behavior.setDirection(normalizedDirection);
+      }
+    }
+    
+    // Fire the weapon manually
+    const projectileFires = kickWeapon.behavior.fire(
+      playerPos,
+      enemies,
+      this.projectilePool,
+      kickWeapon.getDamage(),
+      kickWeapon.range,
+      player,
+      this.weaponEffectSystem
+    );
+    
+    // Process projectiles
+    projectileFires.forEach(({ projectile, startX, startY, targetX, targetY, speed, visuals, followTarget, liveTarget }) => {
+      projectile.fire(
+        startX ?? playerPos.x,
+        startY ?? playerPos.y,
+        targetX,
+        targetY,
+        kickWeapon.getDamage(),
+        visuals,
+        speed ?? kickWeapon.projectileSpeed,
+        followTarget,
+        liveTarget
+      );
+      
+      this.activeProjectiles.add(projectile);
+    });
+    
+    if (projectileFires.length > 0) {
+      kickWeapon.updateFireTime(Date.now());
+    }
   }
 
   addWeapon(weapon: Weapon): void {
@@ -138,7 +206,7 @@ export class WeaponSystem {
     return 'unknown';
   }
 
-  update(deltaTime: number, currentTime: number, player: Player, enemies: Enemy[]): void {
+  update(deltaTime: number, currentTime: number, player: Player, enemies: Enemy[], aimingSystem?: any): void {
     // Update all active projectiles
     const projectilesToRemove: Projectile[] = [];
     
@@ -262,11 +330,12 @@ export class WeaponSystem {
       this.projectilePool.release(projectile);
     });
     
-    // Fire weapons using their behaviors
-    const playerPos = player.getPosition();
-    
-    this.weapons.forEach(weapon => {
-      if (!weapon.canFire(currentTime)) return;
+    // Fire weapons using their behaviors (only in AUTO_TARGET mode)
+    if (this.inputMode === 'AUTO_TARGET') {
+      const playerPos = player.getPosition();
+      
+      this.weapons.forEach(weapon => {
+        if (!weapon.canFire(currentTime)) return;
       
       // Use weapon behavior to determine projectiles
       const projectileFires = weapon.behavior.fire(
@@ -296,10 +365,11 @@ export class WeaponSystem {
         this.activeProjectiles.add(projectile);
       });
       
-      if (projectileFires.length > 0) {
-        weapon.updateFireTime(currentTime);
-      }
-    });
+        if (projectileFires.length > 0) {
+          weapon.updateFireTime(currentTime);
+        }
+      });
+    }
     
     // Check for enemy-to-enemy collisions from knockback
     this.checkKnockbackCollisions(enemies, player);

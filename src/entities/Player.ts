@@ -156,6 +156,11 @@ export class Player {
     return new Vector2(this.sprite.x, this.sprite.y);
   }
   
+  setPosition(x: number, y: number): void {
+    this.sprite.x = x;
+    this.sprite.y = y;
+  }
+  
   setVirtualJoystick(joystick: VirtualJoystick): void {
     this.virtualJoystick = joystick;
   }

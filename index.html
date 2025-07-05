@@ -134,8 +134,8 @@
       }
     }, { passive: false });
 
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
+    // PWA Service Worker Registration (disabled for local development)
+    if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/brainrot-survivors/sw.js')
           .then(registration => {
@@ -305,6 +305,6 @@
       }, 15000);
     }
   </script>
-  <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/main.ts?cache-bust=12345"></script>
 </body>
 </html>

@@ -21,6 +21,13 @@ import { ParticleEffects } from '../utils/ParticleEffects';
 import { DiscoveryChest } from '../entities/DiscoveryChest';
 import { ProgressionBalanceTester } from '../tests/ProgressionBalanceTest';
 import { WeaponBalanceTester } from '../tests/WeaponBalanceTest';
+import { TimeDilationManager } from '../systems/TimeDilationManager';
+import { InputModeManager } from '../systems/InputModeManager';
+import { AimingInputHandler } from '../systems/AimingInputHandler';
+import { AimingVisualizer } from '../systems/AimingVisualizer';
+import { WallSystem } from '../systems/WallSystem';
+
+console.log('🎯 GameScene: All imports loaded successfully');
 
 export class GameScene extends Scene {
   private player!: Player;
@@ -30,6 +37,11 @@ export class GameScene extends Scene {
   private weaponSystem!: WeaponSystem;
   private pickupSystem!: PickupSystem;
   private weaponEffectSystem!: WeaponEffectSystem;
+  private timeDilationManager!: TimeDilationManager;
+  private inputModeManager!: InputModeManager;
+  private aimingInputHandler?: AimingInputHandler;
+  private aimingVisualizer?: AimingVisualizer;
+  private wallSystem!: WallSystem;
   
   // UI elements
   private healthBar!: Phaser.GameObjects.Graphics;
@@ -71,6 +83,7 @@ export class GameScene extends Scene {
   
   constructor() {
     super({ key: 'GameScene' });
+    console.log('🎯 GameScene: Constructor called');
   }
 
   preload(): void {
@@ -161,11 +174,14 @@ export class GameScene extends Scene {
   }
 
   create(): void {
+    console.log('🎯 GameScene: create() called');
+    
     // Initialize upgrade manager globally
     (window as any).upgradeManager = UpgradeManager.getInstance();
     
     // Check if mobile
     this.isMobile = (window as any).isMobile || false;
+    console.log('🎯 Device detection: isMobile =', this.isMobile);
     this.uiScale = this.isMobile ? getMobileUIScale() : 1;
     
     // Create a much larger, more interesting world (8x screen size)
@@ -184,6 +200,10 @@ export class GameScene extends Scene {
     this.weaponSystem = new WeaponSystem(this);
     this.pickupSystem = new PickupSystem(this);
     this.weaponEffectSystem = new WeaponEffectSystem(this);
+    this.wallSystem = new WallSystem(this);
+    
+    // Create test walls to experiment with positioning strategy
+    this.wallSystem.createTestWalls();
     
     // Connect weapon effect system to weapon system
     this.weaponSystem.setWeaponEffectSystem(this.weaponEffectSystem);
@@ -197,6 +217,27 @@ export class GameScene extends Scene {
     
     // Connect visual effects to weapon system
     this.weaponSystem.setVisualEffects(this.screenShake, this.particleEffects);
+    
+    // Initialize time dilation manager
+    this.timeDilationManager = new TimeDilationManager(this);
+    
+    // Initialize clean input mode architecture
+    this.inputModeManager = new InputModeManager(this);
+    
+    // Initialize aiming components for both mobile and desktop
+    console.log('🎯 Initializing aiming systems, isMobile:', this.isMobile);
+    
+    if (!this.isMobile) {
+      console.log('🎯 Creating TouchInputManager for desktop');
+      this.touchInputManager = new TouchInputManager(this);
+    }
+    
+    // Always initialize aiming for testing (will be created in mobile section too)
+    console.log('🎯 Creating aiming components, touchInputManager exists:', !!this.touchInputManager);
+    this.aimingInputHandler = new AimingInputHandler(this);
+    this.aimingVisualizer = new AimingVisualizer(this);
+    this.setupAimingEventListeners();
+    console.log('🎯 Clean aiming architecture initialized!');
     
     // Set up weapon system callbacks
     this.weaponSystem.onEnemyDeath = (x: number, y: number) => {
@@ -692,7 +733,8 @@ export class GameScene extends Scene {
     
     // Update systems
     const enemies = this.spawnSystem.getActiveEnemies();
-    this.movementSystem.update(delta, this.player, enemies);
+    const timeScale = this.timeDilationManager.getCurrentTimeScale();
+    this.movementSystem.update(delta, this.player, enemies, timeScale, this.wallSystem);
     this.spawnSystem.update(this.survivalTime, this.player.getPosition());
     this.collisionSystem.update(this.accumulatedTime, this.player, enemies);
     this.weaponSystem.update(delta, this.accumulatedTime, this.player, enemies);
@@ -711,6 +753,9 @@ export class GameScene extends Scene {
         });
       }
     }
+    
+    // New clean architecture is mostly event-driven, minimal update needed
+    // Input handler updates automatically via Phaser input events
     
     // Update pickups and check for level up
     const xpCollected = this.pickupSystem.update(delta, this.player);
@@ -864,6 +909,12 @@ export class GameScene extends Scene {
     
     // Create touch input manager
     this.touchInputManager = new TouchInputManager(this);
+    
+    // Initialize clean aiming architecture for mobile
+    this.aimingInputHandler = new AimingInputHandler(this);
+    this.aimingVisualizer = new AimingVisualizer(this);
+    this.setupAimingEventListeners();
+    console.log('Clean aiming architecture initialized for mobile!');
     
     // Remove double tap pause - it's annoying
     // Users should use the pause button or ESC key
@@ -1176,5 +1227,83 @@ export class GameScene extends Scene {
     this.player.health = Math.min(this.player.maxHealth, this.player.health + 20);
     
     // Discovery chest rewards applied successfully
+  }
+  
+  // Clean event-driven communication setup
+  private setupAimingEventListeners(): void {
+    if (!this.aimingInputHandler || !this.aimingVisualizer || !this.inputModeManager) {
+      console.log('❌ Missing components for aiming setup:', {
+        aimingInputHandler: !!this.aimingInputHandler,
+        aimingVisualizer: !!this.aimingVisualizer,
+        inputModeManager: !!this.inputModeManager
+      });
+      return;
+    }
+    
+    console.log('🎯 Setting up aiming event listeners');
+    
+    // Input handler → Mode manager (start aiming)
+    this.aimingInputHandler.on('aim-start', (startPos) => {
+      console.log('🎯 GameScene: Received aim-start event');
+      
+      // Get actual weapon range and update visualizer
+      const weaponRange = this.getKickWeaponRange();
+      this.aimingVisualizer?.updateRange(weaponRange);
+      
+      this.inputModeManager.switchToAiming();
+      this.timeDilationManager.enterDilation();
+      this.aimingVisualizer?.showAiming();
+    });
+    
+    // Input handler → Visualizer (update direction)
+    this.aimingInputHandler.on('aim-update', (direction, startPos) => {
+      const playerPos = this.player.getPosition();
+      const enemies = this.spawnSystem.getActiveEnemies();
+      this.aimingVisualizer?.updateAimingVisuals(playerPos, startPos, direction, enemies);
+      this.inputModeManager.setAimDirection(direction);
+    });
+    
+    // Input handler → Mode manager (complete aiming)
+    this.aimingInputHandler.on('aim-complete', (direction) => {
+      this.inputModeManager.requestManualFire(direction);
+    });
+    
+    // Input handler → Mode manager (cancel aiming)
+    this.aimingInputHandler.on('aim-cancel', () => {
+      this.inputModeManager.switchToAutoTarget();
+      this.timeDilationManager.exitDilation();
+      this.aimingVisualizer?.hideAiming();
+    });
+    
+    // Mode manager → Weapon system (mode changes)
+    this.inputModeManager.on('mode-changed', (mode) => {
+      this.weaponSystem.setInputMode(mode);
+      if (mode === 'AUTO_TARGET') {
+        this.timeDilationManager.exitDilation();
+        this.aimingVisualizer?.hideAiming();
+      }
+    });
+    
+    // Mode manager → Weapon system (manual fire)
+    this.inputModeManager.on('manual-fire-requested', (direction) => {
+      const enemies = this.spawnSystem.getActiveEnemies();
+      this.weaponSystem.fireInDirection(direction, this.player, enemies);
+    });
+  }
+  
+  private getKickWeaponRange(): number {
+    // Get the first available kick weapon range
+    const weapons = (this.weaponSystem as any).weapons;
+    if (weapons && weapons.length > 0) {
+      const kickWeapon = weapons.find((weapon: any) => {
+        const behaviorName = weapon.behavior.constructor.name;
+        return behaviorName === 'DirectedKickBehavior' || behaviorName === 'BrAttackBehavior';
+      });
+      if (kickWeapon) {
+        return kickWeapon.range;
+      }
+    }
+    // Fallback to basic kick range
+    return 30;
   }
 }
