@@ -43,16 +43,16 @@ export class BallSystem {
     const isMobile = (window as any).isMobile || false;
     if (!isMobile) return;
     
-    // Create mobile shoot button
-    const buttonSize = 60;
-    const margin = 20;
+    // Create mobile shoot button with larger touch area
+    const buttonSize = 80; // Increased from 60
+    const margin = 30; // Increased from 20 for better spacing
     
     this.shootButton = this.scene.add.container(
       this.scene.scale.width - buttonSize - margin,
       this.scene.scale.height - buttonSize - margin
     );
     
-    // Button background
+    // Button background with larger touch area
     const bg = this.scene.add.circle(0, 0, buttonSize / 2, 0x000000, 0.5);
     const border = this.scene.add.circle(0, 0, buttonSize / 2, 0xff6600).setStrokeStyle(3, 0xff6600);
     border.setFillStyle();
@@ -60,13 +60,13 @@ export class BallSystem {
     // Button icon (ball symbol)
     const icon = this.scene.add.graphics();
     icon.fillStyle(0xff6600);
-    icon.fillCircle(0, 0, 12);
+    icon.fillCircle(0, 0, 15); // Slightly larger icon
     icon.fillStyle(0xff8800, 0.8);
-    icon.fillCircle(-3, -3, 5);
+    icon.fillCircle(-4, -4, 6);
     
     // Button label
-    const label = this.scene.add.text(0, 20, 'SHOOT', {
-      fontSize: '10px',
+    const label = this.scene.add.text(0, 25, 'KICK', {
+      fontSize: '12px',
       color: '#ff6600',
       fontStyle: 'bold'
     }).setOrigin(0.5);
@@ -75,11 +75,11 @@ export class BallSystem {
     this.shootButton.setDepth(200); // Very high depth
     this.shootButton.setScrollFactor(0); // Fixed to camera
     
-    // Make interactive
+    // Make interactive with larger touch area
     bg.setInteractive({ useHandCursor: true });
     bg.on('pointerdown', () => this.handleShootInput());
     
-    console.log('🏀 Mobile shoot button created');
+    console.log('🏀 Mobile kick button created with larger touch area');
   }
   
   update(deltaTime: number, player: Player, enemies: Enemy[], wallSystem?: WallSystem): void {

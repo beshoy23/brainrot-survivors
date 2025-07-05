@@ -29,11 +29,12 @@ export class AimingVisualizer {
     this.aimingRange = weaponRange;
   }
   
-  // Public API for visual control
+  // Public API for visual control - arrows disabled for mobile UI
   showAiming(): void {
-    this.visuals.aimArrow?.setVisible(true);
-    this.visuals.trajectoryLine?.setVisible(true);
-    this.visuals.aimCircle?.setVisible(true);
+    // Keep arrows hidden to prevent mobile UI conflicts
+    this.visuals.aimArrow?.setVisible(false);
+    this.visuals.trajectoryLine?.setVisible(false);
+    this.visuals.aimCircle?.setVisible(false);
   }
   
   hideAiming(): void {
@@ -53,17 +54,8 @@ export class AimingVisualizer {
     aimingDirection: Vector2,
     enemies: Enemy[]
   ): void {
-    // Draw aim arrow
-    this.drawAimArrow(playerPos, aimingDirection);
-    
-    // Draw trajectory line  
-    this.drawTrajectoryLine(playerPos, aimingDirection);
-    
-    // Draw aim circle
-    this.drawAimCircle(aimingStartPos);
-    
-    // Highlight potential targets
-    this.highlightTargets(playerPos, aimingDirection, enemies);
+    // Visual arrows disabled for mobile UI - only time dilation effect remains
+    // No visual updates needed
   }
   
   private createVisuals(): void {

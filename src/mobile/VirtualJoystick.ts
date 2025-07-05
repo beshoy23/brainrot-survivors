@@ -29,13 +29,18 @@ export class VirtualJoystick {
     this.scene = scene;
     this.size = this.config.size;
     this.handleSize = this.size * 0.4;
-    // Always use dynamic positioning
-    this.isFixed = false;
+    // Use fixed positioning to prevent UI conflicts
+    this.isFixed = this.config.fixedPosition;
     this.deadZone = this.config.deadZone;
     
-    // Dynamic joystick starts hidden
-    this.baseX = 0;
-    this.baseY = 0;
+    // Set fixed position in bottom-left
+    if (this.isFixed) {
+      this.baseX = this.config.position.x;
+      this.baseY = this.scene.scale.height + this.config.position.y;
+    } else {
+      this.baseX = 0;
+      this.baseY = 0;
+    }
     
     this.create();
   }
@@ -61,11 +66,19 @@ export class VirtualJoystick {
     // Add to container
     this.container.add([this.background, this.handle]);
     
-    // Create touch zone - entire screen for dynamic joystick
-    const width = this.scene.scale.width;
-    const height = this.scene.scale.height;
-    this.touchZone = this.scene.add.zone(width / 2, height / 2, width, height);
-    this.container.setVisible(false); // Hide until touched
+    // Create touch zone - fixed joystick always visible
+    if (this.isFixed) {
+      // Touch zone around fixed joystick position
+      const touchZoneSize = this.size * 1.5;
+      this.touchZone = this.scene.add.zone(this.baseX, this.baseY, touchZoneSize, touchZoneSize);
+      this.container.setVisible(true); // Always visible when fixed
+    } else {
+      // Full screen touch zone for dynamic joystick
+      const width = this.scene.scale.width;
+      const height = this.scene.scale.height;
+      this.touchZone = this.scene.add.zone(width / 2, height / 2, width, height);
+      this.container.setVisible(false); // Hide until touched
+    }
     
     this.touchZone.setInteractive();
     this.touchZone.setScrollFactor(0);
@@ -77,24 +90,16 @@ export class VirtualJoystick {
     // Touch start
     this.touchZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.touchId === null) {
-        // Check if touch is in UI exclusion zones (top-right for pause button)
-        const uiExclusionSize = 120; // Larger exclusion zone for better pause button access
-        const screenWidth = this.scene.scale.width;
-        const screenHeight = this.scene.scale.height;
-        
-        // Top-right exclusion zone for pause button
-        if (pointer.x > screenWidth - uiExclusionSize && pointer.y < uiExclusionSize) {
-          return; // Don't handle this touch - let UI elements handle it
-        }
-        
         this.touchId = pointer.id;
         this.isDragging = true;
         
-        // Always move joystick to touch position
-        this.baseX = pointer.x;
-        this.baseY = pointer.y;
-        this.container.setPosition(this.baseX, this.baseY);
-        this.container.setVisible(true);
+        if (!this.isFixed) {
+          // Dynamic joystick - move to touch position
+          this.baseX = pointer.x;
+          this.baseY = pointer.y;
+          this.container.setPosition(this.baseX, this.baseY);
+          this.container.setVisible(true);
+        }
         
         // Update visual state
         this.background.clear();
@@ -176,8 +181,10 @@ export class VirtualJoystick {
     this.background.fillCircle(0, 0, this.size / 2);
     this.background.strokeCircle(0, 0, this.size / 2);
     
-    // Always hide when released
-    this.container.setVisible(false);
+    // Hide only if dynamic joystick
+    if (!this.isFixed) {
+      this.container.setVisible(false);
+    }
   }
 
   // Public methods

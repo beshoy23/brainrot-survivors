@@ -8,7 +8,7 @@ export const MobileConfig = {
       deadZone: 0.15,
       fixedPosition: true,
       position: { x: 100, y: -150 }, // Relative to bottom-left
-      dynamicPosition: false // Can be toggled in settings
+      dynamicPosition: false // Fixed positioning to prevent UI conflicts
     },
     touchSensitivity: 1.0,
     hapticFeedback: true,
@@ -32,7 +32,13 @@ export const MobileConfig = {
       right: 10
     },
     healthBarHeight: 30,
-    xpBarHeight: 20
+    xpBarHeight: 20,
+    // UI exclusion zones to prevent overlapping
+    exclusionZones: {
+      joystickArea: { x: 0, y: 0, width: 220, height: 220 }, // Bottom-left
+      kickButtonArea: { x: -140, y: 0, width: 140, height: 140 }, // Bottom-right (relative to screen width)
+      pauseButtonArea: { x: -80, y: 0, width: 80, height: 80 } // Top-right (relative to screen width)
+    }
   },
 
   // Performance settings
