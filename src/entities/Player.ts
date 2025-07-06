@@ -36,14 +36,14 @@ export class Player {
   private shouldReturnToMovementFacing: boolean = false;
 
   constructor(scene: Scene, x: number, y: number) {
-    // Create player as animated sprite
-    this.sprite = scene.add.sprite(x, y, 'patapim-idle', 0);
-    this.sprite.setScale(0.4); // Scale down from 192x192 to ~77x77 (larger than zombies)
+    // Create player as animated farm character sprite
+    this.sprite = scene.add.sprite(x, y, 'farm-char-idle', 0);
+    this.sprite.setScale(2.5); // Scale up from 16x16 to ~40x40 (perfect farm character size)
     this.sprite.setDepth(GameConfig.player.depth);
     
     // Create animations
-    this.createPatapimAnimations(scene);
-    this.sprite.play('patapim-idle-anim');
+    this.createFarmCharacterAnimations(scene);
+    this.sprite.play('farm-char-idle-anim');
     
     this.health = GameConfig.player.maxHealth;
     this.maxHealth = GameConfig.player.maxHealth;
@@ -171,7 +171,7 @@ export class Player {
   
   playAttackAnimation(kickDirection?: Vector2): void {
     this.isAttacking = true;
-    this.sprite.play('patapim-attack-anim');
+    this.sprite.play('farm-char-attack-anim');
     
     // Store kick direction for facing
     if (kickDirection) {
@@ -231,42 +231,42 @@ export class Player {
     return this.experience / this.experienceToNext;
   }
 
-  private createPatapimAnimations(scene: Scene): void {
+  private createFarmCharacterAnimations(scene: Scene): void {
     // Create idle animation
-    if (!scene.anims.exists('patapim-idle-anim')) {
+    if (!scene.anims.exists('farm-char-idle-anim')) {
       scene.anims.create({
-        key: 'patapim-idle-anim',
-        frames: scene.anims.generateFrameNumbers('patapim-idle', { 
+        key: 'farm-char-idle-anim',
+        frames: scene.anims.generateFrameNumbers('farm-char-idle', { 
           start: 0, 
-          end: 7  // 8 frames (0-7)
+          end: 1  // Only 2 frames (0-1)
         }),
-        frameRate: 6, // Slower for idle
+        frameRate: 3, // Slower for idle
         repeat: -1
       });
     }
     
-    // Create run animation
-    if (!scene.anims.exists('patapim-run-anim')) {
+    // Create run animation (use walk texture)
+    if (!scene.anims.exists('farm-char-run-anim')) {
       scene.anims.create({
-        key: 'patapim-run-anim',
-        frames: scene.anims.generateFrameNumbers('patapim-run', { 
+        key: 'farm-char-run-anim',
+        frames: scene.anims.generateFrameNumbers('farm-char-walk', { 
           start: 0, 
-          end: 5  // 6 frames (0-5)
+          end: 1  // Only 2 frames (0-1)
         }),
-        frameRate: 10, // Faster for running
+        frameRate: 6, // Faster for running
         repeat: -1
       });
     }
     
-    // Create attack animation
-    if (!scene.anims.exists('patapim-attack-anim')) {
+    // Create attack animation (use idle for now)
+    if (!scene.anims.exists('farm-char-attack-anim')) {
       scene.anims.create({
-        key: 'patapim-attack-anim',
-        frames: scene.anims.generateFrameNumbers('patapim-attack', { 
+        key: 'farm-char-attack-anim',
+        frames: scene.anims.generateFrameNumbers('farm-char-idle', { 
           start: 0, 
-          end: 3  // 4 frames (0-3)
+          end: 1  // Only 2 frames (0-1)
         }),
-        frameRate: 12, // Fast for attack
+        frameRate: 8, // Fast for attack
         repeat: 0 // Play once, don't loop
       });
     }
@@ -295,12 +295,12 @@ export class Player {
     
     // Switch between idle and running animations
     if (this.isMoving) {
-      if (this.sprite.anims.currentAnim?.key !== 'patapim-run-anim') {
-        this.sprite.play('patapim-run-anim');
+      if (this.sprite.anims.currentAnim?.key !== 'farm-char-run-anim') {
+        this.sprite.play('farm-char-run-anim');
       }
     } else {
-      if (this.sprite.anims.currentAnim?.key !== 'patapim-idle-anim') {
-        this.sprite.play('patapim-idle-anim');
+      if (this.sprite.anims.currentAnim?.key !== 'farm-char-idle-anim') {
+        this.sprite.play('farm-char-idle-anim');
       }
     }
   }

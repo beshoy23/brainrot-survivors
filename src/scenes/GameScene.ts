@@ -89,90 +89,60 @@ export class GameScene extends Scene {
   }
 
   preload(): void {
-    // Load player patapim spritesheets
-    this.load.spritesheet('patapim-idle', 'patapim-idle.png', {
-      frameWidth: 192,
-      frameHeight: 192
+    // Load beautiful farm character spritesheets
+    this.load.spritesheet('farm-char-idle', 'Character/Idle.png', {
+      frameWidth: 16,
+      frameHeight: 16
     });
-    this.load.spritesheet('patapim-run', 'patapim-run.png', {
-      frameWidth: 192, 
-      frameHeight: 192
+    this.load.spritesheet('farm-char-walk', 'Character/Walk.png', {
+      frameWidth: 16, 
+      frameHeight: 16
     });
-    this.load.spritesheet('patapim-attack', 'patapim-attack.png', {
-      frameWidth: 192, 
-      frameHeight: 192
+    // Use idle frames for attack animation
+    this.load.spritesheet('farm-char-attack', 'Character/Idle.png', {
+      frameWidth: 16, 
+      frameHeight: 16
     });
     
     // Load weapon textures
     this.load.image('brbrattack1', 'brbrattack1.png');
     
-    // Load zombie enemy spritesheets
-    // Male Zombie (Basic/Tank/Elite Enemies)
-    this.load.spritesheet('zombie-male-idle', 'zombie-male-idle.png', {
-      frameWidth: 53,
-      frameHeight: 64
+    // Load beautiful farm animal enemies
+    // Red Chickens (Fast/Swarm Enemies)
+    this.load.spritesheet('chicken-red', 'Farm Animals/Chicken Red.png', {
+      frameWidth: 16,
+      frameHeight: 16
     });
-    this.load.spritesheet('zombie-male-walk', 'zombie-male-walk.png', {
-      frameWidth: 53,
-      frameHeight: 64
+    this.load.spritesheet('chicken-blonde', 'Farm Animals/Chicken Blonde  Green.png', {
+      frameWidth: 16,
+      frameHeight: 16
     });
-    this.load.spritesheet('zombie-male-attack', 'zombie-male-attack.png', {
-      frameWidth: 53,
-      frameHeight: 64
+    this.load.spritesheet('baby-chicken', 'Farm Animals/Baby Chicken Yellow.png', {
+      frameWidth: 16,
+      frameHeight: 16
     });
-    this.load.spritesheet('zombie-male-dead', 'zombie-male-dead.png', {
-      frameWidth: 64,
-      frameHeight: 54
+    // Brown Cows (Tank/Elite Enemies)
+    this.load.spritesheet('cow-female', 'Farm Animals/Female Cow Brown.png', {
+      frameWidth: 16,
+      frameHeight: 16
     });
-    
-    // Female Zombie (Fast/Swarm Enemies)
-    this.load.spritesheet('zombie-female-idle', 'zombie-female-idle.png', {
-      frameWidth: 58,
-      frameHeight: 64
-    });
-    this.load.spritesheet('zombie-female-walk', 'zombie-female-walk.png', {
-      frameWidth: 58,
-      frameHeight: 64
-    });
-    this.load.spritesheet('zombie-female-attack', 'zombie-female-attack.png', {
-      frameWidth: 58,
-      frameHeight: 64
-    });
-    this.load.spritesheet('zombie-female-dead', 'zombie-female-dead.png', {
-      frameWidth: 64,
-      frameHeight: 58
+    this.load.spritesheet('cow-male', 'Farm Animals/Male Cow Brown.png', {
+      frameWidth: 16,
+      frameHeight: 16
     });
     
-    // Load medieval warrior spritesheets for stronger enemy types
-    // Black Warrior (Tank Enemies) - 8 frames of 192x192
-    this.load.spritesheet('black-warrior-idle', 'enemies/black-warrior-idle.png', {
-      frameWidth: 192,
-      frameHeight: 192
-    });
-    this.load.spritesheet('black-warrior-run', 'enemies/black-warrior-run.png', {
-      frameWidth: 192,
-      frameHeight: 192
-    });
+    // Load beautiful farm environment assets
+    this.load.image('farm-house', 'Objects/House.png');
+    this.load.image('maple-tree', 'Objects/Maple Tree.png');
+    this.load.image('spring-crops', 'Objects/Spring Crops.png');
+    this.load.image('farm-fence', 'Objects/Fence\'s copiar.png');
+    this.load.image('farm-interior', 'Objects/Interior.png');
+    this.load.image('farm-plates', 'Objects/Plates.png');
+    this.load.image('farm-road', 'Objects/Road copiar.png');
     
-    // Red Lancer (Elite Enemies) - 12 frames of 320x320
-    this.load.spritesheet('red-lancer-idle', 'enemies/red-lancer-idle.png', {
-      frameWidth: 320,
-      frameHeight: 320
-    });
-    this.load.spritesheet('red-lancer-run', 'enemies/red-lancer-run.png', {
-      frameWidth: 320,
-      frameHeight: 320
-    });
-    
-    // Yellow Monk (Swarm Enemies) - 6 frames of 192x192
-    this.load.spritesheet('yellow-monk-idle', 'enemies/yellow-monk-idle.png', {
-      frameWidth: 192,
-      frameHeight: 192
-    });
-    this.load.spritesheet('yellow-monk-run', 'enemies/yellow-monk-run.png', {
-      frameWidth: 192,
-      frameHeight: 192
-    });
+    // Load tileset for beautiful farm background
+    this.load.image('tileset-spring', 'Tileset/Tileset Spring.png');
+    this.load.image('walls-floors', 'Tileset/Walls and Floors copiar.png');
   }
 
   create(): void {
@@ -330,6 +300,9 @@ export class GameScene extends Scene {
     
     // Pre-generate entire background into a texture for efficiency
     this.generateBackgroundTexture(worldWidth, worldHeight);
+    
+    // Add beautiful farm environmental elements
+    this.createFarmEnvironment(worldWidth, worldHeight);
   }
   
   private generateBackgroundTexture(worldWidth: number, worldHeight: number): void {
@@ -794,7 +767,7 @@ export class GameScene extends Scene {
     const safeAreaTop = this.isMobile ? MobileConfig.ui.safeAreaInsets.top : 0;
     this.healthText = this.add.text(padding, padding + safeAreaTop, '', {
       fontSize: fontSize,
-      color: '#ffffff',
+      color: '#F5DEB3', // Warm wheat color for farm theme
       fontFamily: 'monospace'
     });
     this.healthText.setScrollFactor(0);
@@ -809,7 +782,7 @@ export class GameScene extends Scene {
     // Level indicator - top right, minimal
     this.levelText = this.add.text(this.scale.width - padding, padding, '', {
       fontSize: fontSize,
-      color: '#ffffff',
+      color: '#F5DEB3', // Warm wheat color for farm theme
       fontFamily: 'monospace'
     });
     this.levelText.setOrigin(1, 0);
@@ -820,7 +793,7 @@ export class GameScene extends Scene {
     // Time - center top, large and clean
     this.timeText = this.add.text(this.scale.width / 2, padding, '', {
       fontSize: this.isMobile ? '24px' : '20px',
-      color: '#ffffff',
+      color: '#F5DEB3', // Warm wheat color for farm theme
       fontFamily: 'monospace'
     });
     this.timeText.setOrigin(0.5, 0);
@@ -854,15 +827,15 @@ export class GameScene extends Scene {
     const safeAreaTop = this.isMobile ? MobileConfig.ui.safeAreaInsets.top : 0;
     const barY = padding + 22 + safeAreaTop;
     
-    // HP bar background - dark with border
-    this.healthBar.fillStyle(0x333333, 0.8);
+    // HP bar background - warm farm-themed colors
+    this.healthBar.fillStyle(0x8B4513, 0.8); // Brown farm background
     this.healthBar.fillRect(padding, barY, barWidth, barHeight);
-    this.healthBar.lineStyle(1, 0x666666, 0.8);
+    this.healthBar.lineStyle(1, 0xA0522D, 0.8); // Lighter brown border
     this.healthBar.strokeRect(padding, barY, barWidth, barHeight);
     
-    // HP bar fill with color coding
+    // HP bar fill with farm-themed color coding
     if (healthPercent > 0) {
-      const color = healthPercent > 0.6 ? 0x00ff00 : healthPercent > 0.3 ? 0xffff00 : 0xff0000;
+      const color = healthPercent > 0.6 ? 0x228B22 : healthPercent > 0.3 ? 0xFFD700 : 0xDC143C; // Forest green, gold, crimson
       this.healthBar.fillStyle(color, 1.0);
       this.healthBar.fillRect(padding + 1, barY + 1, (barWidth - 2) * healthPercent, barHeight - 2);
     }
@@ -889,15 +862,15 @@ export class GameScene extends Scene {
     const safeAreaBottom = this.isMobile ? MobileConfig.ui.safeAreaInsets.bottom : 0;
     const xpY = this.scale.height - xpHeight - safeAreaBottom;
     
-    // XP bar background - dark with border
-    this.xpBar.fillStyle(0x333333, 0.8);
+    // XP bar background - warm farm-themed colors
+    this.xpBar.fillStyle(0x8B4513, 0.8); // Brown farm background
     this.xpBar.fillRect(0, xpY, this.scale.width, xpHeight);
-    this.xpBar.lineStyle(1, 0x666666, 0.8);
+    this.xpBar.lineStyle(1, 0xA0522D, 0.8); // Lighter brown border
     this.xpBar.strokeRect(0, xpY, this.scale.width, xpHeight);
     
-    // XP fill - bright cyan with glow effect
+    // XP fill - golden harvest color with warm glow
     if (xpPercent > 0) {
-      this.xpBar.fillStyle(0x00ffff, 1.0);
+      this.xpBar.fillStyle(0xFFD700, 1.0); // Golden yellow for farm experience
       this.xpBar.fillRect(1, xpY + 1, (this.scale.width - 2) * xpPercent, xpHeight - 2);
     }
     
@@ -1309,5 +1282,91 @@ export class GameScene extends Scene {
     }
     // Fallback to basic kick range
     return 30;
+  }
+  
+  private createFarmEnvironment(worldWidth: number, worldHeight: number): void {
+    // Create beautiful farm environment with houses, trees, and crops
+    const environmentSpacing = 200; // Space between major elements
+    
+    // Add farm houses scattered throughout the world
+    for (let x = 300; x < worldWidth - 300; x += environmentSpacing * 2) {
+      for (let y = 300; y < worldHeight - 300; y += environmentSpacing * 2) {
+        // Add some randomness to positioning
+        const offsetX = (Math.random() - 0.5) * 100;
+        const offsetY = (Math.random() - 0.5) * 100;
+        
+        const house = this.add.image(x + offsetX, y + offsetY, 'farm-house');
+        house.setScale(3); // Scale up the 16px house
+        house.setDepth(-5); // Behind entities but in front of background
+      }
+    }
+    
+    // Add maple trees throughout the world
+    for (let x = 150; x < worldWidth - 150; x += environmentSpacing) {
+      for (let y = 150; y < worldHeight - 150; y += environmentSpacing) {
+        // Add randomness to tree positioning
+        const offsetX = (Math.random() - 0.5) * 80;
+        const offsetY = (Math.random() - 0.5) * 80;
+        
+        const tree = this.add.image(x + offsetX, y + offsetY, 'maple-tree');
+        tree.setScale(4); // Scale up the 16px tree
+        tree.setDepth(-3); // In front of houses but behind entities
+      }
+    }
+    
+    // Add spring crops in patches
+    for (let x = 400; x < worldWidth - 400; x += environmentSpacing * 1.5) {
+      for (let y = 400; y < worldHeight - 400; y += environmentSpacing * 1.5) {
+        // Create crop patches (3x3 grid of crops)
+        for (let cropX = -1; cropX <= 1; cropX++) {
+          for (let cropY = -1; cropY <= 1; cropY++) {
+            const offsetX = (Math.random() - 0.5) * 30;
+            const offsetY = (Math.random() - 0.5) * 30;
+            
+            const crop = this.add.image(
+              x + cropX * 40 + offsetX, 
+              y + cropY * 40 + offsetY, 
+              'spring-crops'
+            );
+            crop.setScale(2.5); // Scale up the 16px crops
+            crop.setDepth(-8); // Behind everything except background
+          }
+        }
+      }
+    }
+    
+    // Add decorative fences
+    for (let x = 250; x < worldWidth - 250; x += environmentSpacing * 3) {
+      for (let y = 250; y < worldHeight - 250; y += environmentSpacing * 3) {
+        const offsetX = (Math.random() - 0.5) * 150;
+        const offsetY = (Math.random() - 0.5) * 150;
+        
+        const fence = this.add.image(x + offsetX, y + offsetY, 'farm-fence');
+        fence.setScale(3);
+        fence.setDepth(-6);
+      }
+    }
+    
+    // Add interior decorations near houses
+    for (let x = 350; x < worldWidth - 350; x += environmentSpacing * 2.5) {
+      for (let y = 350; y < worldHeight - 350; y += environmentSpacing * 2.5) {
+        const offsetX = (Math.random() - 0.5) * 60;
+        const offsetY = (Math.random() - 0.5) * 60;
+        
+        if (Math.random() > 0.6) { // 40% chance for interior items
+          const interior = this.add.image(x + offsetX, y + offsetY, 'farm-interior');
+          interior.setScale(2.5);
+          interior.setDepth(-7);
+        }
+        
+        if (Math.random() > 0.7) { // 30% chance for plates
+          const plates = this.add.image(x + offsetX + 30, y + offsetY + 30, 'farm-plates');
+          plates.setScale(2);
+          plates.setDepth(-7);
+        }
+      }
+    }
+    
+    console.log('🚜 Beautiful farm environment created with houses, trees, crops, and decorations!');
   }
 }

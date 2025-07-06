@@ -22,17 +22,17 @@ export class BootScene extends Scene {
   }
 
   private createPlaceholderGraphics(): void {
-    // Player (blue square)
+    // Farm-themed player (brown farmer)
     const playerGraphics = this.add.graphics();
-    playerGraphics.fillStyle(0x0066ff);
+    playerGraphics.fillStyle(0x8B4513); // Brown farmer color
     playerGraphics.fillRect(0, 0, 32, 32);
     playerGraphics.generateTexture('player', 32, 32);
     
-    // Enemies are now drawn dynamically based on type
+    // Farm animals are now drawn dynamically based on type
     
-    // Gem (green diamond)
+    // Farm gem (golden corn/wheat)
     const gemGraphics = this.add.graphics();
-    gemGraphics.fillStyle(0x00ff00);
+    gemGraphics.fillStyle(0xFFD700); // Golden yellow for farm produce
     gemGraphics.fillRect(0, 0, 16, 16);
     gemGraphics.generateTexture('gem', 16, 16);
     

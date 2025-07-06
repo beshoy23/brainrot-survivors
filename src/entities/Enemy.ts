@@ -68,10 +68,10 @@ export class Enemy {
   
   constructor(scene: Scene) {
     this.scene = scene;
-    this.sprite = scene.add.sprite(0, 0, 'zombie-male-idle', 0);
+    this.sprite = scene.add.sprite(0, 0, 'chicken-blonde', 0);
     this.sprite.setVisible(false);
     this.sprite.setActive(false);
-    this.sprite.setScale(0.8); // Scale down slightly from 64px
+    this.sprite.setScale(2.5); // Scale up from 16px to nice size
     
     // Create trail graphics
     this.trailGraphics = scene.add.graphics();
@@ -219,27 +219,27 @@ export class Enemy {
   }
   
   private setupEnemySprite(): void {
-    // Set sprite texture based on enemy type - mix of zombies and medieval warriors
+    // Set sprite texture based on enemy type - beautiful farm animals
     let idleTexture: string;
     
     switch (this.enemyType.id) {
       case 'basic':
-        idleTexture = 'zombie-male-idle';     // Male zombie for basic
+        idleTexture = 'chicken-blonde';     // Blonde chicken for basic
         break;
       case 'fast':
-        idleTexture = 'zombie-female-idle';   // Female zombie for fast
+        idleTexture = 'chicken-red';        // Red chicken for fast
         break;
       case 'tank':
-        idleTexture = 'black-warrior-idle';   // Black warrior for tank (armored)
+        idleTexture = 'cow-female';         // Female cow for tank (big)
         break;
       case 'elite':
-        idleTexture = 'red-lancer-idle';      // Red lancer for elite (imposing)
+        idleTexture = 'cow-male';           // Male cow for elite (boss)
         break;
       case 'swarm':
-        idleTexture = 'yellow-monk-idle';     // Yellow monk for swarm (agile)
+        idleTexture = 'baby-chicken';       // Baby chicken for swarm (cute)
         break;
       default:
-        idleTexture = 'zombie-male-idle';
+        idleTexture = 'chicken-blonde';
     }
     
     this.sprite.setTexture(idleTexture, 0);
@@ -248,20 +248,20 @@ export class Enemy {
   }
   
   private getBaseScale(): number {
-    // Different base scales for different enemy sprites
+    // Different base scales for different farm animal sprites
     switch (this.enemyType.id) {
       case 'basic':
-        return 0.8;  // Male zombie: normal size (53×64)
+        return 2.5;  // Blonde chicken: normal size (16×16)
       case 'fast':
-        return 0.7;  // Female zombie: smaller/faster (58×64)
+        return 2.2;  // Red chicken: smaller/faster (16×16)
       case 'tank':
-        return 0.4;  // Black warrior: large but scaled down (192×192)
+        return 3.5;  // Female cow: large tank (16×16)
       case 'elite':
-        return 0.25; // Red lancer: very large sprite, scale way down (320×320)
+        return 4.0;  // Male cow: biggest boss (16×16)
       case 'swarm':
-        return 0.3;  // Yellow monk: medium sprite, scale down (192×192)
+        return 2.0;  // Baby chicken: smallest (16×16)
       default:
-        return 0.8;
+        return 2.5;
     }
   }
   
@@ -285,11 +285,11 @@ export class Enemy {
         
         if (anim === 'idle') {
           spriteKey = spriteConfig.idleTexture;
-          frameCount = spriteConfig.idleFrames - 1; // Convert to 0-based
+          frameCount = spriteConfig.idleFrames; // Already the end index
           frameRate = spriteConfig.idleFrameRate;
         } else { // walk
           spriteKey = spriteConfig.walkTexture;
-          frameCount = spriteConfig.walkFrames - 1; // Convert to 0-based
+          frameCount = spriteConfig.walkFrames; // Already the end index
           frameRate = spriteConfig.walkFrameRate;
         }
         
@@ -307,87 +307,87 @@ export class Enemy {
   }
   
   private getSpriteConfig() {
-    // Return sprite configuration based on enemy type
+    // Return sprite configuration based on farm animal type
     switch (this.enemyType.id) {
       case 'basic':
         return {
-          idleTexture: 'zombie-male-idle',
-          walkTexture: 'zombie-male-walk',
-          idleFrames: 15,
-          walkFrames: 10,
-          idleFrameRate: 4,
-          walkFrameRate: 8
+          idleTexture: 'chicken-blonde',
+          walkTexture: 'chicken-blonde',
+          idleFrames: 1,  // Only 2 frames, so end index is 1
+          walkFrames: 1,
+          idleFrameRate: 3,
+          walkFrameRate: 6
         };
       case 'fast':
         return {
-          idleTexture: 'zombie-female-idle',
-          walkTexture: 'zombie-female-walk',
-          idleFrames: 15,
-          walkFrames: 10,
+          idleTexture: 'chicken-red',
+          walkTexture: 'chicken-red',
+          idleFrames: 1,  // Only 2 frames, so end index is 1
+          walkFrames: 1,
           idleFrameRate: 4,
           walkFrameRate: 8
         };
       case 'tank':
         return {
-          idleTexture: 'black-warrior-idle',
-          walkTexture: 'black-warrior-run',
-          idleFrames: 8,
-          walkFrames: 8,
-          idleFrameRate: 3,
-          walkFrameRate: 6
+          idleTexture: 'cow-female',
+          walkTexture: 'cow-female',
+          idleFrames: 1,  // Only 2 frames, so end index is 1
+          walkFrames: 1,
+          idleFrameRate: 2,
+          walkFrameRate: 4
         };
       case 'elite':
         return {
-          idleTexture: 'red-lancer-idle',
-          walkTexture: 'red-lancer-run',
-          idleFrames: 12,
-          walkFrames: 12,
-          idleFrameRate: 3,
-          walkFrameRate: 8
+          idleTexture: 'cow-male',
+          walkTexture: 'cow-male',
+          idleFrames: 1,  // Only 2 frames, so end index is 1
+          walkFrames: 1,
+          idleFrameRate: 2,
+          walkFrameRate: 5
         };
       case 'swarm':
         return {
-          idleTexture: 'yellow-monk-idle',
-          walkTexture: 'yellow-monk-run',
-          idleFrames: 6,
-          walkFrames: 6,
-          idleFrameRate: 4,
+          idleTexture: 'baby-chicken',
+          walkTexture: 'baby-chicken',
+          idleFrames: 1,  // Only 2 frames, so end index is 1
+          walkFrames: 1,
+          idleFrameRate: 5,
           walkFrameRate: 10
         };
       default:
         return {
-          idleTexture: 'zombie-male-idle',
-          walkTexture: 'zombie-male-walk',
-          idleFrames: 15,
-          walkFrames: 10,
-          idleFrameRate: 4,
-          walkFrameRate: 8
+          idleTexture: 'chicken-blonde',
+          walkTexture: 'chicken-blonde',
+          idleFrames: 1,  // Only 2 frames, so end index is 1
+          walkFrames: 1,
+          idleFrameRate: 3,
+          walkFrameRate: 6
         };
     }
   }
   
   private applyEnemyTinting(): void {
-    // Apply subtle color tints to enhance visual distinction
+    // Apply subtle color tints to enhance farm animal distinction
     switch (this.enemyType.id) {
       case 'basic':
-        // Basic zombies: slight red tint
-        this.sprite.setTint(0xffdddd);
+        // Blonde chickens: natural chicken color
+        this.sprite.setTint(0xffffee);
         break;
       case 'fast':
-        // Fast zombies: cyan tint (avoid gem color confusion)
-        this.sprite.setTint(0xddffff);
+        // Red chickens: enhanced red color
+        this.sprite.setTint(0xff9999);
         break;
       case 'tank':
-        // Tank warriors: darker to emphasize armor
-        this.sprite.setTint(0x999999);
+        // Female cows: natural brown tint
+        this.sprite.setTint(0xddaa88);
         break;
       case 'elite':
-        // Elite lancers: purple tint for elite status
-        this.sprite.setTint(0xffddff);
+        // Male cows: darker brown for boss status
+        this.sprite.setTint(0xaa7755);
         break;
       case 'swarm':
-        // Swarm monks: light yellow for visibility
-        this.sprite.setTint(0xffffdd);
+        // Baby chickens: bright yellow for visibility
+        this.sprite.setTint(0xffffaa);
         break;
       default:
         // No tint for default
@@ -580,52 +580,16 @@ export class Enemy {
     // Stop movement during death
     this.velocity.set(0, 0);
     
-    // Only zombies have death animations
-    if (this.enemyType.id === 'basic' || this.enemyType.id === 'fast') {
-      const deathKey = `${this.enemyType.id}-dead-anim`;
-      
-      // Create death animation if it doesn't exist
-      this.createDeathAnimation();
-      
-      // Switch to death texture and play animation
-      const spriteConfig = this.getSpriteConfig();
-      const deathTexture = spriteConfig.idleTexture.replace('-idle', '-dead');
-      
-      this.sprite.setTexture(deathTexture, 0);
-      this.sprite.play(deathKey);
-      
-      // Reset after death animation
-      this.scene.time.delayedCall(1500, () => {
-        this.reset();
-      });
-    } else {
-      // Medieval warriors just fade out quickly
-      this.sprite.setAlpha(0.7);
-      this.scene.time.delayedCall(500, () => {
-        this.reset();
-      });
-    }
+    // Farm animals just fade out when defeated
+    this.sprite.setAlpha(0.5);
+    this.scene.time.delayedCall(800, () => {
+      this.reset();
+    });
   }
   
   private createDeathAnimation(): void {
-    const scene = this.scene;
-    const enemyId = this.enemyType.id;
-    const deathKey = `${enemyId}-dead-anim`;
-    
-    if (!scene.anims.exists(deathKey) && (enemyId === 'basic' || enemyId === 'fast')) {
-      const spriteConfig = this.getSpriteConfig();
-      const deathTexture = spriteConfig.idleTexture.replace('-idle', '-dead');
-      
-      scene.anims.create({
-        key: deathKey,
-        frames: scene.anims.generateFrameNumbers(deathTexture, { 
-          start: 0, 
-          end: 11 // 12 frames for death
-        }),
-        frameRate: 10,
-        repeat: 0 // Play once
-      });
-    }
+    // Farm animals don't need death animations - they just fade out
+    // This method is kept for compatibility but does nothing
   }
 
   reset(): void {

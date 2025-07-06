@@ -1,12 +1,12 @@
 {
-  "name": "Kick Chain Brawler",
-  "short_name": "KickBrawler",
-  "description": "Physics-based brawler where you kick enemies into devastating chain reactions. Master the art of tactical positioning and combo multipliers!",
+  "name": "Farm Animal Kicker",
+  "short_name": "FarmKicker",
+  "description": "Beautiful farm-themed physics brawler! Kick farm animals into hilarious chain reactions across stunning countryside landscapes!",
   "start_url": "/brainrot-survivors/",
   "display": "standalone",
   "orientation": "landscape-primary",
-  "background_color": "#000000",
-  "theme_color": "#FF6600",
+  "background_color": "#8B4513",
+  "theme_color": "#FFD700",
   "scope": "/brainrot-survivors/",
   "icons": [
     {
